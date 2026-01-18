@@ -128,13 +128,6 @@ async def github_webhook(
                     "message": "Comment not on a pull request"
                 }
 
-            # Only process comments on protectSUS PRs
-            if not event.is_protectsus_pr():
-                return {
-                    "status": "ignored",
-                    "message": "Comment not on a protectSUS PR"
-                }
-
             # Only process comment creation (not edits or deletions)
             if event.action != "created":
                 return {
