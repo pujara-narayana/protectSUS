@@ -37,11 +37,11 @@ def setup_phoenix_tracing(
         clean_api_key = api_key.strip("'\"") if api_key else None
         clean_url = base_url.strip("'\"") if base_url else None
         
-        # Build headers for authentication
+        # Build headers for authentication - Phoenix uses 'api_key' header
         headers = {}
         if clean_api_key:
-            headers["authorization"] = f"Bearer {clean_api_key}"
-            print(f"[PHOENIX] Added authorization header")
+            headers["api_key"] = clean_api_key
+            print(f"[PHOENIX] Added api_key header")
         
         # Import Phoenix OTEL register
         from phoenix.otel import register
@@ -50,6 +50,7 @@ def setup_phoenix_tracing(
         # Configure the Phoenix tracer with endpoint passed directly
         print(f"[PHOENIX] Registering tracer for project: {project_name}")
         print(f"[PHOENIX] Using endpoint: {clean_url}")
+        print(f"[PHOENIX] Headers keys: {list(headers.keys())}")
         
         register_kwargs = {
             "project_name": project_name,
@@ -62,7 +63,8 @@ def setup_phoenix_tracing(
         # Pass headers if we have authentication
         if headers:
             register_kwargs["headers"] = headers
-            
+        
+        print(f"[PHOENIX] Register kwargs: {list(register_kwargs.keys())}")
         tracer_provider = register(**register_kwargs)
         print("[PHOENIX] Tracer registered")
 
