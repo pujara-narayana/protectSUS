@@ -42,9 +42,7 @@ tree-sitter==0.20.4
 libcst==1.1.0
 
 # Observability - Arize Phoenix Tracing (latest stable versions)
-arize-phoenix>=12.0.0
-openinference-instrumentation-openai
-openinference-instrumentation-anthropic
+arize-phoenix==12.30.0
 openinference-instrumentation-langchain
 
 # Utilities
