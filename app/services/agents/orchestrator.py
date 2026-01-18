@@ -38,8 +38,8 @@ class AgentOrchestrator:
         llm_provider = user_settings.get('llm_provider') if user_settings else None
         custom_api_key = user_settings.get('api_key') if user_settings else None
         
-        self.vulnerability_agent = VulnerabilityAgent(llm_provider=llm_provider, custom_api_key=custom_api_key)
-        self.dependency_agent = DependencyAgent(llm_provider=llm_provider, custom_api_key=custom_api_key)
+        self.vulnerability_agent = VulnerabilityAgent(llm_provider=llm_provider)
+        self.dependency_agent = DependencyAgent(llm_provider=llm_provider)
         self.graph = self._build_graph()
 
     def _build_graph(self) -> StateGraph:

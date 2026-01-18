@@ -14,7 +14,7 @@ class DependencyAgent(BaseAgent):
     """Agent for assessing dependency security risks"""
 
     def __init__(self, llm_provider: str = None, custom_api_key: str = None):
-        super().__init__("DependencyAgent", llm_provider=llm_provider, custom_api_key=custom_api_key)
+        super().__init__("DependencyAgent", llm_provider=llm_provider)
 
     async def analyze(self, code: str, context: Dict[str, Any]) -> Dict[str, Any]:
         """
