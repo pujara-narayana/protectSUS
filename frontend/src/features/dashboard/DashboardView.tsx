@@ -1,6 +1,6 @@
 import { getFileContent, getRepoTree } from "@/lib/github";
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   ChevronLeft,
   LogOut,
@@ -13,8 +13,53 @@ import {
   Folder,
   File,
   Network,
+  Loader2,
+  Clock,
 } from "lucide-react";
 import KnowledgeGraphView from "./KnowledgeGraphView";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
+// Types for analysis data
+interface Vulnerability {
+  type: string;
+  severity: string;
+  file_path: string;
+  line_number: number;
+  description: string;
+  cwe_id?: string;
+  recommended_fix?: string;
+}
+
+interface DependencyRisk {
+  package_name: string;
+  version: string;
+  risk_level: string;
+  vulnerabilities: string[];
+  outdated: boolean;
+}
+
+interface DebateEntry {
+  agent_name: string;
+  message: string;
+  timestamp?: string;
+  finding_type?: string;
+}
+
+interface AnalysisData {
+  id: string;
+  repo_full_name: string;
+  commit_sha: string;
+  status: "pending" | "in_progress" | "completed" | "failed";
+  vulnerabilities: Vulnerability[];
+  dependency_risks: DependencyRisk[];
+  debate_transcript: DebateEntry[];
+  summary?: string;
+  pr_number?: number;
+  pr_url?: string;
+  created_at: string;
+  completed_at?: string;
+}
 
 // ----------------------------------------------------------------------------
 // Dashboard
@@ -36,6 +81,12 @@ export const Dashboard = ({
   const [fileContent, setFileContent] = useState<string>("");
   const [activeTab, setActiveTab] = useState<"files" | "code" | "debate" | "kg">("files");
 
+  // Analysis state
+  const [analysis, setAnalysis] = useState<AnalysisData | null>(null);
+  const [analysisLoading, setAnalysisLoading] = useState(true);
+  const [hasRecentAnalysis, setHasRecentAnalysis] = useState(false);
+
+  // Fetch repository tree
   useEffect(() => {
     if (session && repo && commit) {
       getRepoTree(
@@ -47,9 +98,59 @@ export const Dashboard = ({
     }
   }, [session, repo, commit]);
 
+  // Fetch analysis data from backend
+  const fetchAnalysis = useCallback(async () => {
+    if (!repo) return;
+
+    setAnalysisLoading(true);
+    try {
+      const response = await fetch(
+        `${API_URL}/api/v1/analysis/repo/${repo.owner.login}/${repo.name}?limit=1`
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const analyses = data.analyses || [];
+
+        if (analyses.length > 0) {
+          const latestAnalysis = analyses[0];
+
+          // Check if analysis is recent (within last 7 days)
+          const analysisDate = new Date(latestAnalysis.created_at);
+          const sevenDaysAgo = new Date();
+          sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+          if (analysisDate > sevenDaysAgo && latestAnalysis.status === "completed") {
+            setAnalysis(latestAnalysis);
+            setHasRecentAnalysis(true);
+          } else {
+            setAnalysis(null);
+            setHasRecentAnalysis(false);
+          }
+        } else {
+          setAnalysis(null);
+          setHasRecentAnalysis(false);
+        }
+      } else {
+        setAnalysis(null);
+        setHasRecentAnalysis(false);
+      }
+    } catch (error) {
+      console.error("Failed to fetch analysis:", error);
+      setAnalysis(null);
+      setHasRecentAnalysis(false);
+    } finally {
+      setAnalysisLoading(false);
+    }
+  }, [repo]);
+
+  useEffect(() => {
+    fetchAnalysis();
+  }, [fetchAnalysis]);
+
   const handleFileClick = (file: any) => {
     setSelectedFile(file);
-    setActiveTab("code"); // Switch to code view on mobile
+    setActiveTab("code");
     getFileContent(
       session?.accessToken as string,
       repo.owner.login,
@@ -57,6 +158,17 @@ export const Dashboard = ({
       file.path
     ).then(setFileContent);
   };
+
+  // Calculate metrics from analysis
+  const metrics = {
+    overallRisk: analysis ? calculateOverallRisk(analysis) : null,
+    criticalCount: analysis?.vulnerabilities.filter(v => v.severity === "critical").length ?? null,
+    highCount: analysis?.vulnerabilities.filter(v => v.severity === "high").length ?? null,
+    totalFindings: analysis?.vulnerabilities.length ?? null,
+  };
+
+  // Get verdict info
+  const verdict = analysis ? getVerdict(analysis) : null;
 
   if (!repo || !commit) return null;
 
@@ -93,7 +205,12 @@ export const Dashboard = ({
 
       {/* Verdict Card */}
       <div className="max-w-[1800px] mx-auto px-4 sm:px-6 md:px-8 pt-6">
-        <VerdictCard />
+        <VerdictCard
+          verdict={verdict}
+          loading={analysisLoading}
+          hasAnalysis={hasRecentAnalysis}
+          prUrl={analysis?.pr_url}
+        />
       </div>
 
       {/* Desktop Tab Navigation */}
@@ -168,7 +285,7 @@ export const Dashboard = ({
       {/* Main Content */}
       <div className="max-w-[1800px] mx-auto px-4 sm:px-6 md:px-8 py-6 w-full">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-          {/* File Explorer (Mobile: conditional, Desktop: hide when KG active) */}
+          {/* File Explorer */}
           <div className={`col-span-1 md:col-span-2 ${activeTab === "files" ? "block" : "hidden"} ${activeTab === "kg" ? "hidden" : "md:block"}`}>
             <div className="md:h-[calc(120vh-16rem)] h-[60vh]">
               <div className="bg-zinc-900/30 rounded-lg border border-zinc-800 p-4 h-full overflow-y-auto">
@@ -177,17 +294,15 @@ export const Dashboard = ({
             </div>
           </div>
 
-          {/* Code View (Mobile: conditional, Desktop: hide when KG active) */}
+          {/* Code View */}
           <div className={`col-span-1 md:col-span-7 ${activeTab === "code" ? "block" : "hidden"} ${activeTab === "kg" ? "hidden" : "md:block"}`}>
             <div className="md:h-[calc(120vh-16rem)] h-[60vh]">
               <div className="bg-[#1a1a1a] rounded-lg border border-zinc-800 overflow-hidden h-full flex flex-col">
-                {/* Code Header */}
                 <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0">
                   <code className="text-xs text-zinc-400 font-mono truncate">
-                    {selectedFile?.path || commit.commit.message || "main.py"}
+                    {selectedFile?.path || commit.commit.message || "Select a file"}
                   </code>
                 </div>
-                {/* Code Content - scrollable */}
                 <div className="flex-1 overflow-y-auto p-4 font-mono text-xs">
                   <pre>{fileContent}</pre>
                 </div>
@@ -195,11 +310,10 @@ export const Dashboard = ({
             </div>
           </div>
 
-          {/* Agent Debate (Mobile: conditional, Desktop: hide when KG active) */}
+          {/* Agent Debate */}
           <div className={`col-span-1 md:col-span-3 ${activeTab === "debate" ? "block" : "hidden"} ${activeTab === "kg" ? "hidden" : "md:block"}`}>
             <div className="md:h-[calc(120vh-16rem)] h-[60vh]">
               <div className="h-full bg-zinc-900/30 rounded-lg border border-zinc-800 overflow-hidden flex flex-col">
-                {/* Agent Chat Header */}
                 <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0">
                   <div className="flex items-center gap-2">
                     <Bot className="w-4 h-4 text-zinc-400" />
@@ -207,19 +321,24 @@ export const Dashboard = ({
                   </div>
                 </div>
                 <div className="flex-1 overflow-y-auto p-3 space-y-3">
-                  <VulnerabilityCard severity="safe" />
-                  <VulnerabilityCard severity="critical" />
-                  <VulnerabilityCard severity="safe" />
-                  <VulnerabilityCard severity="critical" />
-                  <VulnerabilityCard severity="safe" />
-                  <VulnerabilityCard severity="critical" />
+                  {analysisLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
+                    </div>
+                  ) : hasRecentAnalysis && analysis?.vulnerabilities.length ? (
+                    analysis.vulnerabilities.slice(0, 10).map((vuln, i) => (
+                      <VulnerabilityCard key={i} vulnerability={vuln} />
+                    ))
+                  ) : (
+                    <EmptyAgentDebate />
+                  )}
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Knowledge Graph (Mobile: conditional, Desktop: full width when active) */}
+        {/* Knowledge Graph */}
         {activeTab === "kg" && (
           <div className="col-span-1 md:col-span-12">
             <KnowledgeGraphView repoFullName={`${repo.owner.login}/${repo.name}`} />
@@ -232,33 +351,101 @@ export const Dashboard = ({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <MetricCard
             title="Overall Risk"
-            value="88/100"
-            status="critical"
+            value={metrics.overallRisk !== null ? `${metrics.overallRisk}/100` : "—"}
+            status={metrics.overallRisk !== null && metrics.overallRisk > 60 ? "critical" : metrics.overallRisk !== null && metrics.overallRisk > 30 ? "warning" : "safe"}
             icon={<AlertTriangle className="w-5 h-5" />}
+            loading={analysisLoading}
+            hasData={hasRecentAnalysis}
           />
           <MetricCard
             title="Critical Issues"
-            value="2"
-            status="critical"
+            value={metrics.criticalCount !== null ? String(metrics.criticalCount) : "—"}
+            status={metrics.criticalCount !== null && metrics.criticalCount > 0 ? "critical" : "safe"}
             icon={<AlertCircle className="w-5 h-5" />}
+            loading={analysisLoading}
+            hasData={hasRecentAnalysis}
           />
           <MetricCard
             title="High Severity"
-            value="4"
-            status="warning"
+            value={metrics.highCount !== null ? String(metrics.highCount) : "—"}
+            status={metrics.highCount !== null && metrics.highCount > 0 ? "warning" : "safe"}
             icon={<Info className="w-5 h-5" />}
+            loading={analysisLoading}
+            hasData={hasRecentAnalysis}
           />
           <MetricCard
             title="Total Findings"
-            value="15"
+            value={metrics.totalFindings !== null ? String(metrics.totalFindings) : "—"}
             status="safe"
             icon={<CheckCircle className="w-5 h-5" />}
+            loading={analysisLoading}
+            hasData={hasRecentAnalysis}
           />
         </div>
       </div>
     </div>
   );
 };
+
+// Helper functions
+function calculateOverallRisk(analysis: AnalysisData): number {
+  let score = 0;
+  const vulns = analysis.vulnerabilities;
+
+  score += vulns.filter(v => v.severity === "critical").length * 25;
+  score += vulns.filter(v => v.severity === "high").length * 15;
+  score += vulns.filter(v => v.severity === "medium").length * 7;
+  score += vulns.filter(v => v.severity === "low").length * 2;
+
+  return Math.min(100, score);
+}
+
+function getVerdict(analysis: AnalysisData): {
+  title: string;
+  confidence: number;
+  description: string;
+  fix: string;
+  severity: "critical" | "high" | "medium" | "low" | "safe";
+} | null {
+  const criticalVulns = analysis.vulnerabilities.filter(v => v.severity === "critical");
+  const highVulns = analysis.vulnerabilities.filter(v => v.severity === "high");
+
+  if (criticalVulns.length > 0) {
+    const mostCritical = criticalVulns[0];
+    return {
+      title: `CRITICAL: ${mostCritical.type.replace(/_/g, " ")}`,
+      confidence: 94,
+      description: mostCritical.description,
+      fix: mostCritical.recommended_fix || "Review and fix the critical vulnerability",
+      severity: "critical"
+    };
+  } else if (highVulns.length > 0) {
+    const mostHigh = highVulns[0];
+    return {
+      title: `HIGH: ${mostHigh.type.replace(/_/g, " ")}`,
+      confidence: 85,
+      description: mostHigh.description,
+      fix: mostHigh.recommended_fix || "Review and address the high-severity issue",
+      severity: "high"
+    };
+  } else if (analysis.vulnerabilities.length > 0) {
+    return {
+      title: "MEDIUM: Security Issues Found",
+      confidence: 78,
+      description: analysis.summary || "Some security issues were detected that should be reviewed.",
+      fix: "Review the findings and address them as needed",
+      severity: "medium"
+    };
+  } else {
+    return {
+      title: "SECURE: No Critical Issues",
+      confidence: 92,
+      description: "No critical security vulnerabilities were detected in this codebase.",
+      fix: "Continue following security best practices",
+      severity: "safe"
+    };
+  }
+}
 
 // ----------------------------------------------------------------------------
 // Metric Card
@@ -268,11 +455,15 @@ const MetricCard = ({
   value,
   status,
   icon,
+  loading = false,
+  hasData = true,
 }: {
   title: string;
   value: string;
   status: "critical" | "warning" | "safe";
   icon: React.ReactNode;
+  loading?: boolean;
+  hasData?: boolean;
 }) => {
   const statusClasses = {
     critical: "text-red-400",
@@ -284,40 +475,30 @@ const MetricCard = ({
     <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
       <div className="flex items-center justify-between mb-2">
         <span className="text-sm text-zinc-400 font-medium">{title}</span>
-        <div className={statusClasses[status]}>{icon}</div>
+        <div className={hasData ? statusClasses[status] : "text-zinc-600"}>
+          {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : icon}
+        </div>
       </div>
-      <div className={`text-2xl font-bold ${statusClasses[status]}`}>
-        {value}
+      <div className={`text-2xl font-bold ${hasData ? statusClasses[status] : "text-zinc-600"}`}>
+        {loading ? (
+          <span className="text-zinc-600">...</span>
+        ) : hasData ? (
+          value
+        ) : (
+          <span className="text-zinc-600 flex items-center gap-2">
+            <Clock className="w-4 h-4" />
+            <span className="text-sm font-normal">Pending audit</span>
+          </span>
+        )}
       </div>
     </div>
   );
 };
 
 // ----------------------------------------------------------------------------
-// Tab Button
-// ----------------------------------------------------------------------------
-const TabButton = ({
-  children,
-  active = false,
-}: {
-  children: React.ReactNode;
-  active?: boolean;
-}) => (
-  <button
-    className={`px-6 py-2 rounded-lg font-medium text-sm transition-colors ${active
-      ? "bg-red-500/80 text-white"
-      : "bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-white"
-      }`}
-  >
-    {children}
-  </button>
-);
-
-// ----------------------------------------------------------------------------
 // File Tree
 // ----------------------------------------------------------------------------
 const FileTree = ({ tree, onFileClick, selectedFile }: { tree: any[], onFileClick: (file: any) => void, selectedFile: any }) => {
-
   return (
     <div className="space-y-1">
       {tree.filter(item => item.type === 'blob').map((file, i) => (
@@ -336,89 +517,178 @@ const FileTree = ({ tree, onFileClick, selectedFile }: { tree: any[], onFileClic
   );
 };
 
-
-
 // ----------------------------------------------------------------------------
-// Vulnerability Card
+// Vulnerability Card (with real data)
 // ----------------------------------------------------------------------------
-const VulnerabilityCard = ({ severity }: { severity: "safe" | "critical" }) => {
-  const config = {
-    safe: {
-      icon: <CheckCircle className="w-4 h-4" />,
-      bg: "bg-emerald-500/10",
-      border: "border-emerald-500/20",
-      text: "text-emerald-400",
-      title: "Somethitn something issue summary name",
-    },
+const VulnerabilityCard = ({ vulnerability }: { vulnerability: Vulnerability }) => {
+  const severityConfig = {
     critical: {
       icon: <AlertTriangle className="w-4 h-4" />,
       bg: "bg-red-500/10",
       border: "border-red-500/20",
       text: "text-red-400",
-      title: "Somethitn something issue summary name",
+    },
+    high: {
+      icon: <AlertCircle className="w-4 h-4" />,
+      bg: "bg-orange-500/10",
+      border: "border-orange-500/20",
+      text: "text-orange-400",
+    },
+    medium: {
+      icon: <Info className="w-4 h-4" />,
+      bg: "bg-yellow-500/10",
+      border: "border-yellow-500/20",
+      text: "text-yellow-400",
+    },
+    low: {
+      icon: <CheckCircle className="w-4 h-4" />,
+      bg: "bg-emerald-500/10",
+      border: "border-emerald-500/20",
+      text: "text-emerald-400",
     },
   };
 
-  const style = config[severity];
+  const style = severityConfig[vulnerability.severity as keyof typeof severityConfig] || severityConfig.medium;
 
   return (
-    <div
-      className={`${style.bg} ${style.border} border rounded-lg p-4 flex-shrink-0`}
-    >
+    <div className={`${style.bg} ${style.border} border rounded-lg p-4 flex-shrink-0`}>
       <div className="flex items-start gap-3 mb-3">
         <div className={style.text}>{style.icon}</div>
-        <h4 className={`text-sm font-medium ${style.text}`}>{style.title}</h4>
+        <div>
+          <h4 className={`text-sm font-medium ${style.text}`}>
+            {vulnerability.type.replace(/_/g, " ")}
+          </h4>
+          <p className="text-xs text-zinc-500">{vulnerability.file_path}:{vulnerability.line_number}</p>
+        </div>
       </div>
       <div className="space-y-2 text-xs text-zinc-400">
-        <p>Critical issue detected. Look at this sequence:</p>
-        <div className="font-mono bg-black/30 rounded p-2 space-y-1">
-          <div>42 | balance[msg.sender] = 0;</div>
-          <div>43 | msg.sender.call{"{value: amount}"}("");</div>
-        </div>
-        <p>
-          The balance update happens BEFORE the external call. This is textbook
-          re-entrancy - the attacker can call back before line 42 executes and
-          withdraw multiple times.
-        </p>
+        <p>{vulnerability.description}</p>
+        {vulnerability.recommended_fix && (
+          <div className="mt-2 pt-2 border-t border-zinc-700">
+            <p className="text-emerald-400">Fix: {vulnerability.recommended_fix}</p>
+          </div>
+        )}
       </div>
     </div>
   );
 };
 
 // ----------------------------------------------------------------------------
-// Verdict Card
+// Empty Agent Debate State
 // ----------------------------------------------------------------------------
-const VerdictCard = () => (
-  <div className="bg-gradient-to-br from-blue-500/20 via-blue-500/10 to-blue-600/20 border border-blue-500/40 rounded-lg p-5 shadow-lg shadow-blue-500/10 h-full flex flex-col">
-    <div className="mb-3 flex-shrink-0 flex items-center justify-between">
-      <div>
-        <h3 className="text-base font-bold text-blue-400 mb-1">
-          VERDICT: CRITICAL Re-entrancy
-        </h3>
-        <p className="text-xs text-blue-400/70">Vulnerability Confidence: 94%</p>
-      </div>
-      <button className="py-2 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-800 hover:to-indigo-800 rounded-lg text-white text-sm font-semibold transition-all flex items-center gap-2 shadow-lg shadow-indigo-700/20 whitespace-nowrap">
-        Create New PR
-        <span className="text-base">→</span>
-      </button>
-    </div>
-
-    <div className="space-y-3 text-xs text-white/90 flex-1 flex-shrink-0">
-      <p>
-        The Auditor's analysis is correct. While the nonReentrant modifier on
-        line 15 blocks direct re-entrancy, the internal callback() function on
-        line 89 creates an unprotected re-entry point that attackers can exploit
-        during the external call.
-      </p>
-
-      <div className="pt-2 border-t border-blue-500/20">
-        <p className="font-semibold text-white mb-1">
-          Recommended Fix:{" "}
-          <span className="font-normal">
-            Apply nonReentrant modifier to callback()
-          </span>
-        </p>
-      </div>
-    </div>
+const EmptyAgentDebate = () => (
+  <div className="flex flex-col items-center justify-center h-full text-center p-6">
+    <Bot className="w-12 h-12 text-zinc-700 mb-4" />
+    <h4 className="text-zinc-400 font-medium mb-2">No Recent Analysis</h4>
+    <p className="text-zinc-600 text-sm">
+      This repository hasn't been audited recently. Push to the main branch or trigger a security scan to see agent debates and findings.
+    </p>
   </div>
 );
+
+// ----------------------------------------------------------------------------
+// Verdict Card (with real data)
+// ----------------------------------------------------------------------------
+const VerdictCard = ({
+  verdict,
+  loading,
+  hasAnalysis,
+  prUrl
+}: {
+  verdict: ReturnType<typeof getVerdict> | null;
+  loading: boolean;
+  hasAnalysis: boolean;
+  prUrl?: string;
+}) => {
+  if (loading) {
+    return (
+      <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-5 h-full flex items-center justify-center">
+        <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
+      </div>
+    );
+  }
+
+  if (!hasAnalysis || !verdict) {
+    return (
+      <div className="bg-zinc-900/50 border border-zinc-800 rounded-lg p-5 h-full flex flex-col">
+        <div className="mb-3 flex-shrink-0 flex items-center justify-between">
+          <div>
+            <h3 className="text-base font-bold text-zinc-500 mb-1 flex items-center gap-2">
+              <Clock className="w-5 h-5" />
+              AWAITING AUDIT
+            </h3>
+            <p className="text-xs text-zinc-600">No recent security analysis available</p>
+          </div>
+          <button className="py-2 px-4 bg-gradient-to-r from-zinc-700 to-zinc-600 rounded-lg text-zinc-300 text-sm font-semibold transition-all flex items-center gap-2 shadow-lg whitespace-nowrap cursor-not-allowed opacity-60">
+            Trigger Audit
+            <span className="text-base">→</span>
+          </button>
+        </div>
+        <div className="text-xs text-zinc-600 flex-1">
+          <p>
+            Push code to the main branch or manually trigger a security audit to receive
+            vulnerability analysis, agent debates, and fix recommendations.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  const severityColors = {
+    critical: "from-red-500/20 via-red-500/10 to-red-600/20 border-red-500/40 shadow-red-500/10",
+    high: "from-orange-500/20 via-orange-500/10 to-orange-600/20 border-orange-500/40 shadow-orange-500/10",
+    medium: "from-yellow-500/20 via-yellow-500/10 to-yellow-600/20 border-yellow-500/40 shadow-yellow-500/10",
+    low: "from-emerald-500/20 via-emerald-500/10 to-emerald-600/20 border-emerald-500/40 shadow-emerald-500/10",
+    safe: "from-emerald-500/20 via-emerald-500/10 to-emerald-600/20 border-emerald-500/40 shadow-emerald-500/10",
+  };
+
+  const textColors = {
+    critical: "text-red-400",
+    high: "text-orange-400",
+    medium: "text-yellow-400",
+    low: "text-emerald-400",
+    safe: "text-emerald-400",
+  };
+
+  return (
+    <div className={`bg-gradient-to-br ${severityColors[verdict.severity]} border rounded-lg p-5 shadow-lg h-full flex flex-col`}>
+      <div className="mb-3 flex-shrink-0 flex items-center justify-between">
+        <div>
+          <h3 className={`text-base font-bold ${textColors[verdict.severity]} mb-1`}>
+            VERDICT: {verdict.title}
+          </h3>
+          <p className={`text-xs ${textColors[verdict.severity]} opacity-70`}>
+            Vulnerability Confidence: {verdict.confidence}%
+          </p>
+        </div>
+        {prUrl ? (
+          <a
+            href={prUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="py-2 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-800 hover:to-indigo-800 rounded-lg text-white text-sm font-semibold transition-all flex items-center gap-2 shadow-lg shadow-indigo-700/20 whitespace-nowrap"
+          >
+            View PR
+            <span className="text-base">→</span>
+          </a>
+        ) : (
+          <button className="py-2 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-800 hover:to-indigo-800 rounded-lg text-white text-sm font-semibold transition-all flex items-center gap-2 shadow-lg shadow-indigo-700/20 whitespace-nowrap">
+            Create New PR
+            <span className="text-base">→</span>
+          </button>
+        )}
+      </div>
+
+      <div className="space-y-3 text-xs text-white/90 flex-1 flex-shrink-0">
+        <p>{verdict.description}</p>
+
+        <div className="pt-2 border-t border-white/10">
+          <p className="font-semibold text-white mb-1">
+            Recommended Fix:{" "}
+            <span className="font-normal">{verdict.fix}</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
