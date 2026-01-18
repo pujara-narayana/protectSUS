@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import {
   BarChart, Bell, Search, Users, X, ShieldCheck, AlertTriangle,
-  Clock, Lock, Eye, EyeOff, Loader2, RefreshCw
+  Clock, Lock, Eye, EyeOff, Loader2, RefreshCw, Menu, LogOut
 } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -45,6 +45,9 @@ const AdminDashboard = () => {
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+
+  // Mobile menu state
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Data state
   const [kpiMetrics, setKpiMetrics] = useState<KPIMetric[]>([
@@ -242,7 +245,15 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white">
-      <aside className="fixed top-0 left-0 w-64 h-full bg-zinc-900/50 p-4 flex flex-col justify-between">
+      {/* Mobile menu overlay */}
+      {isMobileMenuOpen && (
+        <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setIsMobileMenuOpen(false)} />
+      )}
+
+      {/* Sidebar for desktop and mobile */}
+      <aside className={`fixed top-0 left-0 w-64 h-full bg-zinc-900/50 p-4 flex flex-col justify-between z-50 transform transition-transform duration-300 md:transform-none ${
+        isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+      }`}>
         <div>
           <div className="flex items-center ml-2 mb-4">
             <Image src="/logo-white.svg" alt="ProtectSUS Logo" width={16} height={16} />
@@ -270,16 +281,29 @@ const AdminDashboard = () => {
             onClick={handleLogout}
             className="flex items-center p-2 text-zinc-400 hover:text-zinc-300 hover:bg-zinc-800/50 rounded-lg transition-colors w-full"
           >
-            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-            </svg>
+            <LogOut className="h-4 w-4" />
             <span className="ml-3 text-sm">Logout</span>
           </button>
         </div>
       </aside>
 
-      <main className="ml-64 p-4">
-        <header className="flex items-center gap-4 mb-4">
+      {/* Main content */}
+      <div className="md:ml-64">
+        {/* Mobile header */}
+        <header className="md:hidden bg-zinc-900/50 border-b border-zinc-800 p-4 flex items-center justify-between">
+          <button
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="p-2 text-zinc-400 hover:text-zinc-300 rounded-lg hover:bg-zinc-800/50"
+          >
+            <Menu className="h-6 w-6" />
+          </button>
+          <div className="w-8 h-8 bg-gradient-to-br from-blue-500/20 to-indigo-500/20 rounded-full border border-blue-500/30 flex items-center justify-center">
+            <span className="text-xs text-blue-400 font-medium">A</span>
+          </div>
+        </header>
+
+        {/* Desktop header */}
+        <header className="hidden md:flex items-center gap-4 mb-4 p-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-400" />
             <input
@@ -303,49 +327,51 @@ const AdminDashboard = () => {
           </div>
         </header>
 
-        {/* KPI Metrics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-          {kpiMetrics.map((metric, index) => (
-            <div key={index} className="bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-indigo-500/10 p-4 rounded-lg border border-blue-500/20">
-              <h3 className="text-zinc-400 text-xs font-medium mb-1">{metric.title}</h3>
-              <p className="text-2xl font-medium text-blue-400">
-                {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : metric.value}
-              </p>
-            </div>
-          ))}
-        </div>
-
-        {/* System Health */}
-        <div className="mb-4">
-          <h3 className="text-lg font-medium mb-2">System Health</h3>
-          <div className="flex overflow-x-auto gap-4 pb-2">
-            {loading ? (
-              <div className="flex items-center justify-center w-full py-8">
-                <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
+        {/* Main dashboard content */}
+        <main className="p-4">
+          {/* KPI Metrics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+            {kpiMetrics.map((metric, index) => (
+              <div key={index} className="bg-gradient-to-br from-blue-500/10 via-blue-500/5 to-indigo-500/10 p-4 rounded-lg border border-blue-500/20">
+                <h3 className="text-zinc-400 text-xs font-medium mb-1">{metric.title}</h3>
+                <p className="text-2xl font-medium text-blue-400">
+                  {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : metric.value}
+                </p>
               </div>
-            ) : systemHealth.length > 0 ? (
-              systemHealth.map((system, index) => (
-                <div key={index} className="relative flex-shrink-0 w-48 bg-zinc-900/50 p-4 rounded-lg border border-zinc-800 bg-gradient-to-br from-blue-500/5 via-transparent to-indigo-500/5">
-                  <div className="flex items-center mb-2">
-                    <div className="scale-75">
-                      {system.healthy ? (
-                        <ShieldCheck className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <AlertTriangle className="h-4 w-4 text-red-500" />
-                      )}
-                    </div>
-                    <span className="ml-2 text-sm text-zinc-300">{system.name}</span>
-                  </div>
-                  <span className={`text-xs ${system.healthy ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {system.status}
-                  </span>
-                </div>
-              ))
-            ) : (
-              <p className="text-zinc-500 text-sm">Unable to fetch system health</p>
-            )}
+            ))}
           </div>
-        </div>
+
+          {/* System Health */}
+          <div className="mb-4">
+            <h3 className="text-lg font-medium mb-2">System Health</h3>
+            <div className="flex overflow-x-auto gap-4 pb-2">
+              {loading ? (
+                <div className="flex items-center justify-center w-full py-8">
+                  <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
+                </div>
+              ) : systemHealth.length > 0 ? (
+                systemHealth.map((system, index) => (
+                  <div key={index} className="relative flex-shrink-0 w-48 bg-zinc-900/50 p-4 rounded-lg border border-zinc-800 bg-gradient-to-br from-blue-500/5 via-transparent to-indigo-500/5">
+                    <div className="flex items-center mb-2">
+                      <div className="scale-75">
+                        {system.healthy ? (
+                          <ShieldCheck className="h-4 w-4 text-green-500" />
+                        ) : (
+                          <AlertTriangle className="h-4 w-4 text-red-500" />
+                        )}
+                      </div>
+                      <span className="ml-2 text-sm text-zinc-300">{system.name}</span>
+                    </div>
+                    <span className={`text-xs ${system.healthy ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {system.status}
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-zinc-500 text-sm">Unable to fetch system health</p>
+              )}
+            </div>
+          </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Recent Analyses */}
@@ -409,7 +435,7 @@ const AdminDashboard = () => {
           </div>
 
           {/* User List */}
-          <div className="lg:col-span-2 bg-zinc-900/50 p-4 -mt-2 rounded-lg border border-zinc-800 bg-gradient-to-br from-blue-500/5 via-transparent to-indigo-500/5">
+          <div className="lg:col-span-2 bg-zinc-900/50 p-4 rounded-lg border border-zinc-800 bg-gradient-to-br from-blue-500/5 via-transparent to-indigo-500/5">
             <h3 className="text-lg font-medium mb-3">Registered Users</h3>
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-zinc-800">
@@ -473,6 +499,7 @@ const AdminDashboard = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };
