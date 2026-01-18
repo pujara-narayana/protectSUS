@@ -1,4 +1,4 @@
-"""Multi-agent orchestrator using LangGraph"""
+"""Multi-agent orchestrator using LangGraph with Phoenix tracing"""
 
 from typing import Dict, Any, List
 from langgraph.graph import StateGraph, END
@@ -8,6 +8,11 @@ import time
 
 from app.services.agents.vulnerability_agent import VulnerabilityAgent
 from app.services.agents.dependency_agent import DependencyAgent
+from app.core.tracing import (
+    trace_agent_workflow,
+    trace_langgraph_node,
+    TracedSpan
+)
 
 logger = logging.getLogger(__name__)
 
@@ -194,7 +199,7 @@ class AgentOrchestrator:
 
     async def analyze(self, code: str, context: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Run multi-agent analysis
+        Run multi-agent analysis with Phoenix tracing.
 
         Args:
             code: Compressed code to analyze
@@ -205,41 +210,50 @@ class AgentOrchestrator:
         """
         logger.info("Starting multi-agent analysis orchestration")
         start_time = time.time()
-
-        # Initialize state
-        initial_state: AnalysisState = {
-            'code': code,
-            'context': context,
-            'vulnerabilities': [],
-            'dependency_risks': [],
-            'agent_analyses': [],
-            'debate_transcript': [],
-            'summary': '',
-            'total_tokens_used': 0,
-            'errors': []
-        }
-
-        try:
-            # Run the graph
-            final_state = await self.graph.ainvoke(initial_state)
-
-            total_time = time.time() - start_time
-
-            result = {
-                'vulnerabilities': final_state['vulnerabilities'],
-                'dependency_risks': final_state['dependency_risks'],
-                'agent_analyses': final_state['agent_analyses'],
-                'debate_transcript': final_state['debate_transcript'],
-                'summary': final_state['summary'],
-                'total_execution_time': total_time,
-                'total_tokens_used': final_state['total_tokens_used'],
-                'errors': final_state['errors']
+        
+        # Create root span for entire workflow
+        with TracedSpan("multi_agent_security_analysis", {
+            "workflow.type": "security_analysis",
+            "repo.name": context.get('repo_full_name', 'unknown'),
+            "code.length": len(code),
+            "agent.count": 2,
+        }):
+            # Initialize state
+            initial_state: AnalysisState = {
+                'code': code,
+                'context': context,
+                'vulnerabilities': [],
+                'dependency_risks': [],
+                'agent_analyses': [],
+                'debate_transcript': [],
+                'summary': '',
+                'total_tokens_used': 0,
+                'errors': []
             }
 
-            logger.info(f"Multi-agent analysis completed in {total_time:.2f}s")
+            try:
+                # Run the LangGraph workflow
+                # (LangGraph is auto-instrumented by Phoenix)
+                final_state = await self.graph.ainvoke(initial_state)
 
-            return result
+                total_time = time.time() - start_time
 
-        except Exception as e:
-            logger.error(f"Multi-agent analysis failed: {e}", exc_info=True)
-            raise
+                result = {
+                    'vulnerabilities': final_state['vulnerabilities'],
+                    'dependency_risks': final_state['dependency_risks'],
+                    'agent_analyses': final_state['agent_analyses'],
+                    'debate_transcript': final_state['debate_transcript'],
+                    'summary': final_state['summary'],
+                    'total_execution_time': total_time,
+                    'total_tokens_used': final_state['total_tokens_used'],
+                    'errors': final_state['errors']
+                }
+
+                logger.info(f"Multi-agent analysis completed in {total_time:.2f}s")
+
+                return result
+
+            except Exception as e:
+                logger.error(f"Multi-agent analysis failed: {e}", exc_info=True)
+                raise
+
