@@ -22,12 +22,15 @@ class AnalysisService:
         repo_full_name: str,
         commit_sha: str,
         clone_url: str,
-        pr_number: Optional[int] = None
+        pr_number: Optional[int] = None,
+        user_settings: Optional[Dict[str, Any]] = None
     ) -> str:
         """
         Trigger a new security analysis
 
-        Creates an analysis record and queues background task
+        Creates an analysis record and queues background task.
+        If user_settings provided, the analysis will use the user's
+        custom LLM API key and provider preference.
         """
         try:
             # Generate analysis ID
@@ -47,13 +50,14 @@ class AnalysisService:
 
             logger.info(f"Created analysis {analysis_id} for {repo_full_name}@{commit_sha}")
 
-            # Queue background task
+            # Queue background task with user settings
             run_security_analysis.delay(
                 analysis_id=analysis_id,
                 repo_full_name=repo_full_name,
                 commit_sha=commit_sha,
                 clone_url=clone_url,
-                pr_number=pr_number
+                pr_number=pr_number,
+                user_settings=user_settings  # Pass user's LLM settings here
             )
 
             logger.info(f"Queued analysis task for {analysis_id}")
