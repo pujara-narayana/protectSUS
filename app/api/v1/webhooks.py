@@ -87,6 +87,17 @@ async def github_webhook(
         elif x_github_event == "pull_request":
             event = PullRequestEvent(**data)
             if event.is_opened_or_synchronized():
+                # Skip analysis if PR is created by a bot
+                pr_author = event.pull_request.get("user", {})
+                is_bot = pr_author.get("type") == "Bot" or pr_author.get("login", "").endswith("[bot]")
+                
+                if is_bot:
+                    logger.info(f"Skipping analysis for bot-created PR #{event.number} by {pr_author.get('login')}")
+                    return {
+                        "status": "ignored",
+                        "message": f"PR created by bot, skipping analysis"
+                    }
+                
                 logger.info(f"Processing PR event: {event.repository.full_name} #{event.number}")
                 analysis_id = await AnalysisService.trigger_analysis(
                     repo_full_name=event.repository.full_name,
