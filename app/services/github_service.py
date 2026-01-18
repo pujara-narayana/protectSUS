@@ -30,36 +30,28 @@ class GitHubService:
     def get_installation_client(self, repo_full_name: str) -> Github:
         """Get GitHub client for a specific installation"""
         try:
-            # First, use app-level auth to get the installation
+            # Read private key
             with open(settings.GITHUB_APP_PRIVATE_KEY_PATH, 'r') as key_file:
                 private_key = key_file.read()
             
+            owner, repo = repo_full_name.split('/')
+            
+            # Create app authentication to get installation ID
             app_auth = Auth.AppAuth(
                 app_id=settings.GITHUB_APP_ID,
                 private_key=private_key
             )
+            github_app = Github(auth=app_auth)
             
-            # Get the installation ID from the repository
-            app_github = Github(auth=app_auth)
-            owner, repo = repo_full_name.split('/')
+            # Get all installations and find the one for this repo's owner
+            installation_id = None
+            for installation in github_app.get_app().get_installations():
+                if installation.account.login.lower() == owner.lower():
+                    installation_id = installation.id
+                    break
             
-            # Try to get installation for the repo
-            try:
-                installation = app_github.get_repo(repo_full_name).get_installation()
-                installation_id = installation.id
-            except Exception as e:
-                # If that fails, try getting it from the app installations
-                logger.warning(f"Could not get installation from repo, trying app installations: {e}")
-                installations = app_github.get_app().get_installations()
-                installation_id = None
-                for inst in installations:
-                    # Find the installation that has access to this repo
-                    if owner in [inst.account.login]:
-                        installation_id = inst.id
-                        break
-                
-                if installation_id is None:
-                    raise Exception(f"No installation found for repository {repo_full_name}")
+            if installation_id is None:
+                raise Exception(f"No installation found for owner: {owner}")
             
             # Now authenticate as the installation
             installation_auth = Auth.AppInstallationAuth(
