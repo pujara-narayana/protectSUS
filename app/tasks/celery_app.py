@@ -26,6 +26,7 @@ celery_app.conf.update(
     task_soft_time_limit=1500,  # 25 minutes
     worker_prefetch_multiplier=1,
     worker_max_tasks_per_child=10,
+    broker_connection_retry_on_startup=True,  # Fix deprecation warning
 )
 
 # Initialize Phoenix tracing for Celery worker

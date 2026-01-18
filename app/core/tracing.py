@@ -44,13 +44,17 @@ def setup_phoenix_tracing(
             os.environ["PHOENIX_COLLECTOR_ENDPOINT"] = clean_url
             print(f"[PHOENIX] Set PHOENIX_COLLECTOR_ENDPOINT: {clean_url}")
         
-        # Import and register - simple as per docs
+        # Ensure endpoint ends with /v1/traces for proper protocol detection
+        endpoint_url = clean_url
+        if clean_url and not clean_url.endswith("/v1/traces"):
+            endpoint_url = f"{clean_url.rstrip('/')}/v1/traces"
+        
+        # Import and register
         from phoenix.otel import register
         
         tracer_provider = register(
             project_name=project_name,
-            endpoint=clean_url,
-            # auto_instrument=True
+            endpoint=endpoint_url,
         )
 
         print(f"[PHOENIX] ✓ Tracing initialized!")
