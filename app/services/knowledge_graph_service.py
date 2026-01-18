@@ -296,7 +296,11 @@ class KnowledgeGraphService:
             async with driver.session() as session:
                 await session.run(
                     """
-                    MATCH (r:Repository {full_name: $repo_full_name})
+                    MERGE (r:Repository {full_name: $repo_full_name})
+                    ON CREATE SET r.name = $repo_name,
+                                  r.owner = $repo_owner,
+                                  r.created_at = datetime()
+                    SET r.updated_at = datetime()
                     MERGE (a:Analysis {id: $analysis_id})
                     SET a.summary = $summary,
                         a.debate_highlights = $debate_highlights,
@@ -305,6 +309,8 @@ class KnowledgeGraphService:
                     MERGE (r)-[:HAS_ANALYSIS]->(a)
                     """,
                     repo_full_name=repo_full_name,
+                    repo_name=repo_full_name.split("/")[-1],
+                    repo_owner=repo_full_name.split("/")[0],
                     analysis_id=analysis_id,
                     summary=summary,
                     debate_highlights=debate_highlights or []
