@@ -10,6 +10,8 @@ from app.services.github_service import GitHubService
 from app.services.compression_service import CompressionService
 from app.services.agents.orchestrator import AgentOrchestrator
 from app.services.fix_service import FixService
+from app.services.cache_service import RepositoryCacheService
+from app.services.knowledge_graph_service import KnowledgeGraphService
 from app.core.database import MongoDB, connect_databases, disconnect_databases
 from app.models.analysis import AnalysisStatus
 
@@ -72,17 +74,29 @@ async def _run_analysis_async(
         # Update status to in_progress
         await _update_analysis_status(analysis_id, AnalysisStatus.IN_PROGRESS)
 
-        # Step 1: Clone repository
-        logger.info(f"Step 1: Cloning repository {repo_full_name}@{commit_sha}")
-        repo_path = await github_service.clone_repository(
-            repo_full_name=repo_full_name,
-            commit_sha=commit_sha,
-            clone_url=clone_url
-        )
+        # Step 1: Check cache for existing code files
+        logger.info(f"Step 1: Checking cache for {repo_full_name}@{commit_sha[:7]}")
+        code_files = await RepositoryCacheService.get_cached_code(repo_full_name, commit_sha)
+        
+        if code_files:
+            logger.info(f"Cache hit! Using {len(code_files)} cached files")
+            repo_path = None  # No cleanup needed
+        else:
+            # Clone repository
+            logger.info(f"Cache miss. Cloning repository {repo_full_name}@{commit_sha}")
+            repo_path = await github_service.clone_repository(
+                repo_full_name=repo_full_name,
+                commit_sha=commit_sha,
+                clone_url=clone_url
+            )
 
-        # Step 2: Extract code files
-        logger.info("Step 2: Extracting code files")
-        code_files = await github_service.get_code_files(repo_path)
+            # Step 2: Extract code files
+            logger.info("Step 2: Extracting code files")
+            code_files = await github_service.get_code_files(repo_path)
+            
+            # Cache for future use
+            if code_files:
+                await RepositoryCacheService.cache_code(repo_full_name, commit_sha, code_files)
 
         if not code_files:
             logger.warning("No code files found in repository")
@@ -92,7 +106,8 @@ async def _run_analysis_async(
                 {
                     'completed_at': datetime.utcnow(),
                     'vulnerabilities': [],
-                    'dependency_risks': []
+                    'dependency_risks': [],
+                    'summary': 'No code files found in repository.'
                 }
             )
             return
@@ -170,6 +185,8 @@ async def _run_analysis_async(
                 'vulnerabilities': analysis_result['vulnerabilities'],
                 'dependency_risks': analysis_result['dependency_risks'],
                 'agent_analyses': analysis_result['agent_analyses'],
+                'debate_transcript': analysis_result.get('debate_transcript', []),
+                'summary': analysis_result.get('summary', ''),
                 'completed_at': datetime.utcnow(),
                 'total_execution_time': analysis_result['total_execution_time'],
                 'total_tokens_used': analysis_result['total_tokens_used'],
@@ -177,6 +194,23 @@ async def _run_analysis_async(
                 'pr_url': pr_info['pr_url'] if pr_info else None
             }
         )
+
+        # Step 9: Save summary to Neo4j knowledge graph
+        try:
+            debate_highlights = [
+                entry.get('reasoning', entry.get('summary', ''))
+                for entry in analysis_result.get('debate_transcript', [])
+                if entry.get('action') in ('analysis_complete', 'aggregation_complete')
+            ]
+            await KnowledgeGraphService.create_analysis_summary_node(
+                analysis_id=analysis_id,
+                repo_full_name=repo_full_name,
+                summary=analysis_result.get('summary', ''),
+                debate_highlights=debate_highlights
+            )
+            logger.info("Step 9: Saved analysis summary to Neo4j")
+        except Exception as e:
+            logger.warning(f"Failed to save summary to Neo4j: {e}")
 
         logger.info(f"Analysis {analysis_id} completed successfully")
 

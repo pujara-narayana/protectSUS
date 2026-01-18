@@ -273,3 +273,45 @@ class KnowledgeGraphService:
         except Exception as e:
             logger.error(f"Error getting high-risk files: {e}")
             return []
+
+    @staticmethod
+    async def create_analysis_summary_node(
+        analysis_id: str,
+        repo_full_name: str,
+        summary: str,
+        debate_highlights: List[str] = None
+    ):
+        """
+        Create an analysis summary node in Neo4j linked to the repository.
+        
+        Args:
+            analysis_id: Unique analysis identifier
+            repo_full_name: Full repository name (owner/repo)
+            summary: Analysis summary text
+            debate_highlights: Optional list of key points from agent debate
+        """
+        try:
+            driver = Neo4jDB.get_driver()
+
+            async with driver.session() as session:
+                await session.run(
+                    """
+                    MATCH (r:Repository {full_name: $repo_full_name})
+                    MERGE (a:Analysis {id: $analysis_id})
+                    SET a.summary = $summary,
+                        a.debate_highlights = $debate_highlights,
+                        a.created_at = datetime(),
+                        a.repository = $repo_full_name
+                    MERGE (r)-[:HAS_ANALYSIS]->(a)
+                    """,
+                    repo_full_name=repo_full_name,
+                    analysis_id=analysis_id,
+                    summary=summary,
+                    debate_highlights=debate_highlights or []
+                )
+
+            logger.info(f"Created analysis summary node: {analysis_id}")
+
+        except Exception as e:
+            logger.error(f"Error creating analysis summary node: {e}")
+            raise
