@@ -7,6 +7,7 @@ import tempfile
 import shutil
 from pathlib import Path
 from typing import Optional, Dict, Any, List
+from datetime import datetime
 import logging
 
 from app.core.config import settings
@@ -153,10 +154,25 @@ class GitHubService:
             gh = self.get_installation_client(repo_full_name)
             repo = gh.get_repo(repo_full_name)
 
-            # Create new branch
-            branch_name = f"protectsus-fixes-{base_commit[:7]}"
+            # Create new branch with timestamp to avoid conflicts
+            timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
+            branch_name = f"protectsus-fixes-{base_commit[:7]}-{timestamp}"
             base_ref = repo.get_git_ref(f"heads/{repo.default_branch}")
-            repo.create_git_ref(f"refs/heads/{branch_name}", base_commit)
+            
+            # Try to create branch, if it exists, delete and recreate
+            try:
+                repo.create_git_ref(f"refs/heads/{branch_name}", base_commit)
+            except GithubException as e:
+                if e.status == 422:  # Reference already exists
+                    logger.warning(f"Branch {branch_name} exists, deleting and recreating")
+                    try:
+                        existing_ref = repo.get_git_ref(f"heads/{branch_name}")
+                        existing_ref.delete()
+                    except:
+                        pass
+                    repo.create_git_ref(f"refs/heads/{branch_name}", base_commit)
+                else:
+                    raise
 
             logger.info(f"Created branch {branch_name}")
 
