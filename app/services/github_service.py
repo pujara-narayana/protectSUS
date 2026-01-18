@@ -39,7 +39,10 @@ class GitHubService:
         )
 
         for installation in integration.get_installations():
-            if installation.account.login.lower() == owner.lower():
+            # Access account info from raw_data
+            account = installation.raw_data.get("account", {})
+            account_login = account.get("login", "")
+            if account_login.lower() == owner.lower():
                 return integration.get_github_for_installation(installation.id)
 
         raise Exception(f"No installation found for repo owner {owner}")
