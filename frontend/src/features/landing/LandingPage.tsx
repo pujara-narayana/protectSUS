@@ -23,7 +23,6 @@ const Header = () => (
           onClick={() => scrollToSection('hero')}
           className="flex items-center gap-2 text-xl text-white hover:text-blue-400 transition-colors"
         >
-          <img src="/logo-white.svg" alt="ProtectSUS Logo" className="h-6 w-6" />
           ProtectSUS
         </button>
         <nav className="flex items-center gap-8">
@@ -60,60 +59,41 @@ const Header = () => (
 );
 
 const LandingPage = ({ onSignIn }: { onSignIn: () => void }) => (
-    <div className="min-h-screen bg-zinc-950">
+    <div className="min-h-screen bg-[#0A0F1F]">
       <Header />
-      <div id="hero" className="relative overflow-hidden pt-16">
-      <div className="absolute inset-0 bg-gradient-mesh opacity-90 blur-3xl"></div>
-      <div className="relative max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-24 sm:py-32">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
-          <div>
-            <h1 className="text-5xl sm:text-6xl text-white mb-6 leading-tight">
-              Secure Your Code Base with{" "}
-              <span className="bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
-                Agentic Intelligence
-              </span>
-            </h1>
-            <p className="text-xl text-zinc-400 mb-8 leading-relaxed">
-              ProtectSUS uses multi-agent debate to catch vulnerabilities before they deploy.
-            </p>
-            <button
-              onClick={onSignIn}
-              className="group inline-flex items-center gap-3 px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-500 hover:to-indigo-500 transition-all duration-200 shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40"
-            >
-              <Github className="w-5 h-5" />
-              Connect with GitHub to Start Audit
-              <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
-          <div className="hidden lg:block relative">
-             <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 to-indigo-600/20 rounded-2xl blur-3xl"></div>
-                <div className="relative bg-zinc-900/50 backdrop-blur-sm border border-zinc-800 rounded-2xl p-8">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full bg-status-safe"></div>
-                      <div className="flex-1 h-2 bg-zinc-800 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 w-3/4"></div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full bg-status-warning"></div>
-                      <div className="flex-1 h-2 bg-zinc-800 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-amber-500 to-orange-500 w-1/2"></div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full bg-status-critical"></div>
-                      <div className="flex-1 h-2 bg-zinc-800 rounded-full overflow-hidden">
-                        <div className="h-full bg-gradient-to-r from-red-500 to-pink-500 w-1/4"></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-          </div>
+      <div id="hero" className="relative h-screen overflow-hidden">
+        {/* Centered Asset */}
+        <div className="absolute inset-0 flex items-center justify-center">
+          <img src="/hero-asset.png" alt="Hero" className="w-full max-w-5xl mx-auto" />
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 h-full">
+            {/* Bottom Left */}
+            <div className="absolute bottom-12 left-12">
+                <h2 className="text-4xl md:text-5xl text-white leading-tight font-semibold">
+                    Secure Your Code<br />
+                    Base with <span className="text-blue-400">Agentic<br />Intelligence</span>
+                </h2>
+            </div>
+
+            {/* Bottom Right */}
+            <div className="absolute bottom-12 right-12 text-right">
+                <p className="text-lg text-zinc-400 mb-6 max-w-xs">
+                    ProtectSUS uses multi-agent debate to catch vulnerabilities before they deploy.
+                </p>
+                <button
+                  onClick={onSignIn}
+                  className="group inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-500 transition-colors"
+                >
+                  <Github className="w-5 h-5" />
+                  Connect with GitHub to Start Audit
+                  <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </button>
+            </div>
         </div>
       </div>
-    </div>
-    <div id="features" className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-16">
+    <div id="features" className="relative max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-16">
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-indigo-600/10 blur-3xl"></div>
       <div className="grid md:grid-cols-3 gap-8">
         <FeatureCard
           icon={<Users className="w-6 h-6 text-blue-400" />}
