@@ -11,6 +11,7 @@ from app.models.webhook import PushEvent, PullRequestEvent, IssueCommentEvent
 from app.services.analysis_service import AnalysisService
 from app.services.command_parser import CommandParser
 from app.tasks.pr_workflow_tasks import handle_pr_approval, handle_pr_denial
+from app.tasks.graph_tasks import trigger_graph_indexing_task
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -75,10 +76,22 @@ async def github_webhook(
                     commit_sha=event.after,
                     clone_url=event.repository.clone_url
                 )
+                
+                # Also trigger graph indexing for real-time graph updates
+                try:
+                    trigger_graph_indexing_task.delay(
+                        repo_full_name=event.repository.full_name,
+                        commit_sha=event.after,
+                        clone_url=event.repository.clone_url
+                    )
+                    logger.info(f"Graph indexing queued for {event.repository.full_name}")
+                except Exception as graph_err:
+                    logger.warning(f"Failed to queue graph indexing: {graph_err}")
+                
                 return {
                     "status": "accepted",
                     "analysis_id": analysis_id,
-                    "message": "Analysis triggered for push event"
+                    "message": "Analysis and graph indexing triggered for push event"
                 }
             else:
                 return {
