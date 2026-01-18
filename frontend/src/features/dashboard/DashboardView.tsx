@@ -77,7 +77,9 @@ export const Dashboard = ({
   const [tree, setTree] = useState<any[]>([]);
   const [selectedFile, setSelectedFile] = useState<any>(null);
   const [fileContent, setFileContent] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<"files" | "code" | "debate">("files");
+  const [activeTab, setActiveTab] = useState<"files" | "code" | "debate">(
+    "files",
+  );
 
   // Analysis state
   const [analysis, setAnalysis] = useState<AnalysisData | null>(null);
@@ -91,7 +93,7 @@ export const Dashboard = ({
         session.accessToken as string,
         repo.owner.login,
         repo.name,
-        commit.sha
+        commit.sha,
       ).then(setTree);
     }
   }, [session, repo, commit]);
@@ -104,7 +106,7 @@ export const Dashboard = ({
     try {
       // First try to get analysis for this specific commit
       const commitResponse = await fetch(
-        `${API_URL}/api/v1/analysis/repo/${repo.owner.login}/${repo.name}/commit/${commit.sha}`
+        `${API_URL}/api/v1/analysis/repo/${repo.owner.login}/${repo.name}/commit/${commit.sha}`,
       );
 
       if (commitResponse.ok) {
@@ -120,7 +122,7 @@ export const Dashboard = ({
 
       // Fallback: get latest analysis for repo
       const response = await fetch(
-        `${API_URL}/api/v1/analysis/repo/${repo.owner.login}/${repo.name}?limit=1`
+        `${API_URL}/api/v1/analysis/repo/${repo.owner.login}/${repo.name}?limit=1`,
       );
 
       if (response.ok) {
@@ -135,7 +137,10 @@ export const Dashboard = ({
           const sevenDaysAgo = new Date();
           sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-          if (analysisDate > sevenDaysAgo && latestAnalysis.status === "completed") {
+          if (
+            analysisDate > sevenDaysAgo &&
+            latestAnalysis.status === "completed"
+          ) {
             setAnalysis(latestAnalysis);
             setHasRecentAnalysis(true);
           } else {
@@ -170,7 +175,7 @@ export const Dashboard = ({
       session?.accessToken as string,
       repo.owner.login,
       repo.name,
-      file.path
+      file.path,
     ).then(setFileContent);
   };
 
@@ -183,20 +188,17 @@ export const Dashboard = ({
 
     setAuditTriggering(true);
     try {
-      const response = await fetch(
-        `${API_URL}/api/v1/analysis/trigger`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            repo_full_name: `${repo.owner.login}/${repo.name}`,
-            commit_sha: commit.sha,
-            clone_url: repo.clone_url,
-          }),
-        }
-      );
+      const response = await fetch(`${API_URL}/api/v1/analysis/trigger`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          repo_full_name: `${repo.owner.login}/${repo.name}`,
+          commit_sha: commit.sha,
+          clone_url: repo.clone_url,
+        }),
+      });
 
       if (response.ok) {
         const data = await response.json();
@@ -215,11 +217,13 @@ export const Dashboard = ({
 
         const pollInterval = setInterval(async () => {
           attempts++;
-          console.log(`Polling for analysis... attempt ${attempts}/${maxAttempts}`);
+          console.log(
+            `Polling for analysis... attempt ${attempts}/${maxAttempts}`,
+          );
 
           try {
             const statusResponse = await fetch(
-              `${API_URL}/api/v1/analysis/${data.analysis_id}/status`
+              `${API_URL}/api/v1/analysis/${data.analysis_id}/status`,
             );
 
             if (statusResponse.ok) {
@@ -260,8 +264,12 @@ export const Dashboard = ({
   // Calculate metrics from analysis
   const metrics = {
     overallRisk: analysis ? calculateOverallRisk(analysis) : null,
-    criticalCount: analysis?.vulnerabilities.filter(v => v.severity === "critical").length ?? null,
-    highCount: analysis?.vulnerabilities.filter(v => v.severity === "high").length ?? null,
+    criticalCount:
+      analysis?.vulnerabilities.filter((v) => v.severity === "critical")
+        .length ?? null,
+    highCount:
+      analysis?.vulnerabilities.filter((v) => v.severity === "high").length ??
+      null,
     totalFindings: analysis?.vulnerabilities.length ?? null,
   };
 
@@ -288,7 +296,9 @@ export const Dashboard = ({
                 <h2 className="text-base sm:text-lg font-semibold text-white truncate max-w-xs sm:max-w-md">
                   Commit #{commit.sha.substring(0, 5)} {commit.commit.message}
                 </h2>
-                <p className="text-xs text-zinc-500 font-mono truncate">{repo.name}</p>
+                <p className="text-xs text-zinc-500 font-mono truncate">
+                  {repo.name}
+                </p>
               </div>
             </div>
             <button
@@ -318,10 +328,13 @@ export const Dashboard = ({
         <div className="flex gap-2 border-b border-zinc-800 pb-4">
           <button
             onClick={() => setActiveTab("files")}
-            className={`py-2 px-6 rounded-lg font-medium text-sm transition-colors ${activeTab === "files" || activeTab === "code" || activeTab === "debate"
-              ? "bg-zinc-800 text-zinc-400"
-              : "bg-zinc-800 text-zinc-400"
-              }`}
+            className={`py-2 px-6 rounded-lg font-medium text-sm transition-colors ${
+              activeTab === "files" ||
+              activeTab === "code" ||
+              activeTab === "debate"
+                ? "bg-zinc-800 text-zinc-400"
+                : "bg-zinc-800 text-zinc-400"
+            }`}
           >
             <Folder className="w-4 h-4 inline mr-2" />
             Code Explorer
@@ -334,28 +347,31 @@ export const Dashboard = ({
         <div className="flex gap-2">
           <button
             onClick={() => setActiveTab("files")}
-            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${activeTab === "files"
-              ? "bg-blue-600 text-white"
-              : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-              }`}
+            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
+              activeTab === "files"
+                ? "bg-blue-600 text-white"
+                : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+            }`}
           >
             File Explorer
           </button>
           <button
             onClick={() => setActiveTab("code")}
-            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${activeTab === "code"
-              ? "bg-blue-600 text-white"
-              : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-              }`}
+            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
+              activeTab === "code"
+                ? "bg-blue-600 text-white"
+                : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+            }`}
           >
             Code View
           </button>
           <button
             onClick={() => setActiveTab("debate")}
-            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${activeTab === "debate"
-              ? "bg-blue-600 text-white"
-              : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-              }`}
+            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
+              activeTab === "debate"
+                ? "bg-blue-600 text-white"
+                : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+            }`}
           >
             Agent Debate
           </button>
@@ -366,21 +382,31 @@ export const Dashboard = ({
       <div className="max-w-[1800px] mx-auto px-4 sm:px-6 md:px-8 py-6 w-full">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
           {/* File Explorer */}
-          <div className={`col-span-1 md:col-span-2 ${activeTab === "files" ? "block" : "hidden md:block"}`}>
+          <div
+            className={`col-span-1 md:col-span-2 ${activeTab === "files" ? "block" : "hidden md:block"}`}
+          >
             <div className="md:h-[calc(120vh-16rem)] h-[60vh]">
               <div className="bg-zinc-900/30 rounded-lg border border-zinc-800 p-4 h-full overflow-y-auto">
-                <FileTree tree={tree} onFileClick={handleFileClick} selectedFile={selectedFile} />
+                <FileTree
+                  tree={tree}
+                  onFileClick={handleFileClick}
+                  selectedFile={selectedFile}
+                />
               </div>
             </div>
           </div>
 
           {/* Code View */}
-          <div className={`col-span-1 md:col-span-7 ${activeTab === "code" ? "block" : "hidden md:block"}`}>
+          <div
+            className={`col-span-1 md:col-span-7 ${activeTab === "code" ? "block" : "hidden md:block"}`}
+          >
             <div className="md:h-[calc(120vh-16rem)] h-[60vh]">
               <div className="bg-[#1a1a1a] rounded-lg border border-zinc-800 overflow-hidden h-full flex flex-col">
                 <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0">
                   <code className="text-xs text-zinc-400 font-mono truncate">
-                    {selectedFile?.path || commit.commit.message || "Select a file"}
+                    {selectedFile?.path ||
+                      commit.commit.message ||
+                      "Select a file"}
                   </code>
                 </div>
                 <div className="flex-1 overflow-y-auto p-4 font-mono text-xs">
@@ -391,13 +417,17 @@ export const Dashboard = ({
           </div>
 
           {/* Agent Debate */}
-          <div className={`col-span-1 md:col-span-3 ${activeTab === "debate" ? "block" : "hidden md:block"}`}>
+          <div
+            className={`col-span-1 md:col-span-3 ${activeTab === "debate" ? "block" : "hidden md:block"}`}
+          >
             <div className="md:h-[calc(120vh-16rem)] h-[60vh]">
               <div className="h-full bg-zinc-900/30 rounded-lg border border-zinc-800 overflow-hidden flex flex-col">
                 <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0">
                   <div className="flex items-center gap-2">
                     <Bot className="w-4 h-4 text-zinc-400" />
-                    <h3 className="text-sm font-semibold text-zinc-300">Agent Debate</h3>
+                    <h3 className="text-sm font-semibold text-zinc-300">
+                      Agent Debate
+                    </h3>
                   </div>
                 </div>
                 <div className="flex-1 overflow-y-auto p-3 space-y-3">
@@ -406,9 +436,11 @@ export const Dashboard = ({
                       <Loader2 className="w-6 h-6 text-indigo-500 animate-spin" />
                     </div>
                   ) : hasRecentAnalysis && analysis?.vulnerabilities.length ? (
-                    analysis.vulnerabilities.slice(0, 10).map((vuln, i) => (
-                      <VulnerabilityCard key={i} vulnerability={vuln} />
-                    ))
+                    analysis.vulnerabilities
+                      .slice(0, 10)
+                      .map((vuln, i) => (
+                        <VulnerabilityCard key={i} vulnerability={vuln} />
+                      ))
                   ) : (
                     <EmptyAgentDebate />
                   )}
@@ -424,16 +456,32 @@ export const Dashboard = ({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <MetricCard
             title="Overall Risk"
-            value={metrics.overallRisk !== null ? `${metrics.overallRisk}/100` : "—"}
-            status={metrics.overallRisk !== null && metrics.overallRisk > 60 ? "critical" : metrics.overallRisk !== null && metrics.overallRisk > 30 ? "warning" : "safe"}
+            value={
+              metrics.overallRisk !== null ? `${metrics.overallRisk}/100` : "—"
+            }
+            status={
+              metrics.overallRisk !== null && metrics.overallRisk > 60
+                ? "critical"
+                : metrics.overallRisk !== null && metrics.overallRisk > 30
+                  ? "warning"
+                  : "safe"
+            }
             icon={<AlertTriangle className="w-5 h-5" />}
             loading={analysisLoading}
             hasData={hasRecentAnalysis}
           />
           <MetricCard
             title="Critical Issues"
-            value={metrics.criticalCount !== null ? String(metrics.criticalCount) : "—"}
-            status={metrics.criticalCount !== null && metrics.criticalCount > 0 ? "critical" : "safe"}
+            value={
+              metrics.criticalCount !== null
+                ? String(metrics.criticalCount)
+                : "—"
+            }
+            status={
+              metrics.criticalCount !== null && metrics.criticalCount > 0
+                ? "critical"
+                : "safe"
+            }
             icon={<AlertCircle className="w-5 h-5" />}
             loading={analysisLoading}
             hasData={hasRecentAnalysis}
@@ -441,14 +489,22 @@ export const Dashboard = ({
           <MetricCard
             title="High Severity"
             value={metrics.highCount !== null ? String(metrics.highCount) : "—"}
-            status={metrics.highCount !== null && metrics.highCount > 0 ? "warning" : "safe"}
+            status={
+              metrics.highCount !== null && metrics.highCount > 0
+                ? "warning"
+                : "safe"
+            }
             icon={<Info className="w-5 h-5" />}
             loading={analysisLoading}
             hasData={hasRecentAnalysis}
           />
           <MetricCard
             title="Total Findings"
-            value={metrics.totalFindings !== null ? String(metrics.totalFindings) : "—"}
+            value={
+              metrics.totalFindings !== null
+                ? String(metrics.totalFindings)
+                : "—"
+            }
             status="safe"
             icon={<CheckCircle className="w-5 h-5" />}
             loading={analysisLoading}
@@ -465,10 +521,10 @@ function calculateOverallRisk(analysis: AnalysisData): number {
   let score = 0;
   const vulns = analysis.vulnerabilities;
 
-  score += vulns.filter(v => v.severity === "critical").length * 25;
-  score += vulns.filter(v => v.severity === "high").length * 15;
-  score += vulns.filter(v => v.severity === "medium").length * 7;
-  score += vulns.filter(v => v.severity === "low").length * 2;
+  score += vulns.filter((v) => v.severity === "critical").length * 25;
+  score += vulns.filter((v) => v.severity === "high").length * 15;
+  score += vulns.filter((v) => v.severity === "medium").length * 7;
+  score += vulns.filter((v) => v.severity === "low").length * 2;
 
   return Math.min(100, score);
 }
@@ -480,8 +536,12 @@ function getVerdict(analysis: AnalysisData): {
   fix: string;
   severity: "critical" | "high" | "medium" | "low" | "safe";
 } | null {
-  const criticalVulns = analysis.vulnerabilities.filter(v => v.severity === "critical");
-  const highVulns = analysis.vulnerabilities.filter(v => v.severity === "high");
+  const criticalVulns = analysis.vulnerabilities.filter(
+    (v) => v.severity === "critical",
+  );
+  const highVulns = analysis.vulnerabilities.filter(
+    (v) => v.severity === "high",
+  );
 
   if (criticalVulns.length > 0) {
     const mostCritical = criticalVulns[0];
@@ -489,8 +549,10 @@ function getVerdict(analysis: AnalysisData): {
       title: `CRITICAL: ${mostCritical.type.replace(/_/g, " ")}`,
       confidence: 94,
       description: mostCritical.description,
-      fix: mostCritical.recommended_fix || "Review and fix the critical vulnerability",
-      severity: "critical"
+      fix:
+        mostCritical.recommended_fix ||
+        "Review and fix the critical vulnerability",
+      severity: "critical",
     };
   } else if (highVulns.length > 0) {
     const mostHigh = highVulns[0];
@@ -498,24 +560,29 @@ function getVerdict(analysis: AnalysisData): {
       title: `HIGH: ${mostHigh.type.replace(/_/g, " ")}`,
       confidence: 85,
       description: mostHigh.description,
-      fix: mostHigh.recommended_fix || "Review and address the high-severity issue",
-      severity: "high"
+      fix:
+        mostHigh.recommended_fix ||
+        "Review and address the high-severity issue",
+      severity: "high",
     };
   } else if (analysis.vulnerabilities.length > 0) {
     return {
       title: "MEDIUM: Security Issues Found",
       confidence: 78,
-      description: analysis.summary || "Some security issues were detected that should be reviewed.",
+      description:
+        analysis.summary ||
+        "Some security issues were detected that should be reviewed.",
       fix: "Review the findings and address them as needed",
-      severity: "medium"
+      severity: "medium",
     };
   } else {
     return {
       title: "SECURE: No Critical Issues",
       confidence: 92,
-      description: "No critical security vulnerabilities were detected in this codebase.",
+      description:
+        "No critical security vulnerabilities were detected in this codebase.",
       fix: "Continue following security best practices",
-      severity: "safe"
+      severity: "safe",
     };
   }
 }
@@ -552,7 +619,9 @@ const MetricCard = ({
           {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : icon}
         </div>
       </div>
-      <div className={`text-2xl font-bold ${hasData ? statusClasses[status] : "text-zinc-600"}`}>
+      <div
+        className={`text-2xl font-bold ${hasData ? statusClasses[status] : "text-zinc-600"}`}
+      >
         {loading ? (
           <span className="text-zinc-600">...</span>
         ) : hasData ? (
@@ -571,21 +640,35 @@ const MetricCard = ({
 // ----------------------------------------------------------------------------
 // File Tree
 // ----------------------------------------------------------------------------
-const FileTree = ({ tree, onFileClick, selectedFile }: { tree: any[], onFileClick: (file: any) => void, selectedFile: any }) => {
+const FileTree = ({
+  tree,
+  onFileClick,
+  selectedFile,
+}: {
+  tree: any[];
+  onFileClick: (file: any) => void;
+  selectedFile: any;
+}) => {
   return (
     <div className="space-y-1">
-      {tree.filter(item => item.type === 'blob').map((file, i) => (
-        <div
-          key={i}
-          onClick={() => onFileClick(file)}
-          className={`flex items-center gap-2 px-3 py-2 rounded cursor-pointer transition-colors group ${selectedFile?.path === file.path ? "bg-blue-600/20" : "hover:bg-zinc-800/50"
-            }`}>
-          <File className="w-4 h-4 text-blue-500" />
-          <span className="text-sm text-zinc-400 group-hover:text-white font-mono">
-            {file.path}
-          </span>
-        </div>
-      ))}
+      {tree
+        .filter((item) => item.type === "blob")
+        .map((file, i) => (
+          <div
+            key={i}
+            onClick={() => onFileClick(file)}
+            className={`flex items-center gap-2 px-3 py-2 rounded cursor-pointer transition-colors group ${
+              selectedFile?.path === file.path
+                ? "bg-blue-600/20"
+                : "hover:bg-zinc-800/50"
+            }`}
+          >
+            <File className="w-4 h-4 text-blue-500" />
+            <span className="text-sm text-zinc-400 group-hover:text-white font-mono">
+              {file.path}
+            </span>
+          </div>
+        ))}
     </div>
   );
 };
@@ -593,7 +676,11 @@ const FileTree = ({ tree, onFileClick, selectedFile }: { tree: any[], onFileClic
 // ----------------------------------------------------------------------------
 // Vulnerability Card (with real data)
 // ----------------------------------------------------------------------------
-const VulnerabilityCard = ({ vulnerability }: { vulnerability: Vulnerability }) => {
+const VulnerabilityCard = ({
+  vulnerability,
+}: {
+  vulnerability: Vulnerability;
+}) => {
   const severityConfig = {
     critical: {
       icon: <AlertTriangle className="w-4 h-4" />,
@@ -621,24 +708,32 @@ const VulnerabilityCard = ({ vulnerability }: { vulnerability: Vulnerability }) 
     },
   };
 
-  const style = severityConfig[vulnerability.severity as keyof typeof severityConfig] || severityConfig.medium;
+  const style =
+    severityConfig[vulnerability.severity as keyof typeof severityConfig] ||
+    severityConfig.medium;
 
   return (
-    <div className={`${style.bg} ${style.border} border rounded-lg p-4 flex-shrink-0`}>
+    <div
+      className={`${style.bg} ${style.border} border rounded-lg p-4 flex-shrink-0`}
+    >
       <div className="flex items-start gap-3 mb-3">
         <div className={style.text}>{style.icon}</div>
         <div>
           <h4 className={`text-sm font-medium ${style.text}`}>
             {vulnerability.type.replace(/_/g, " ")}
           </h4>
-          <p className="text-xs text-zinc-500">{vulnerability.file_path}:{vulnerability.line_number}</p>
+          <p className="text-xs text-zinc-500">
+            {vulnerability.file_path}:{vulnerability.line_number}
+          </p>
         </div>
       </div>
       <div className="space-y-2 text-xs text-zinc-400">
         <p>{vulnerability.description}</p>
         {vulnerability.recommended_fix && (
           <div className="mt-2 pt-2 border-t border-zinc-700">
-            <p className="text-emerald-400">Fix: {vulnerability.recommended_fix}</p>
+            <p className="text-emerald-400">
+              Fix: {vulnerability.recommended_fix}
+            </p>
           </div>
         )}
       </div>
@@ -654,7 +749,8 @@ const EmptyAgentDebate = () => (
     <Bot className="w-12 h-12 text-zinc-700 mb-4" />
     <h4 className="text-zinc-400 font-medium mb-2">No Recent Analysis</h4>
     <p className="text-zinc-600 text-sm">
-      This repository hasn't been audited recently. Push to the main branch or trigger a security scan to see agent debates and findings.
+      This repository hasn't been audited recently. Push to the main branch or
+      trigger a security scan to see agent debates and findings.
     </p>
   </div>
 );
@@ -668,7 +764,7 @@ const VerdictCard = ({
   hasAnalysis,
   prUrl,
   onTriggerAudit,
-  triggering
+  triggering,
 }: {
   verdict: ReturnType<typeof getVerdict> | null;
   loading: boolean;
@@ -695,16 +791,19 @@ const VerdictCard = ({
               {triggering ? "AUDIT IN PROGRESS" : "AWAITING AUDIT"}
             </h3>
             <p className="text-xs text-zinc-600">
-              {triggering ? "Security analysis is running..." : "No recent security analysis available"}
+              {triggering
+                ? "Security analysis is running..."
+                : "No recent security analysis available"}
             </p>
           </div>
           <button
             onClick={onTriggerAudit}
             disabled={triggering}
-            className={`py-2 px-4 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 shadow-lg whitespace-nowrap ${triggering
-              ? "bg-indigo-600 text-white cursor-wait"
-              : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white cursor-pointer"
-              }`}
+            className={`py-2 px-4 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 shadow-lg whitespace-nowrap ${
+              triggering
+                ? "bg-indigo-600 text-white cursor-wait"
+                : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white cursor-pointer"
+            }`}
           >
             {triggering ? (
               <>
@@ -731,9 +830,11 @@ const VerdictCard = ({
   }
 
   const severityColors = {
-    critical: "from-red-500/20 via-red-500/10 to-red-600/20 border-red-500/40 shadow-red-500/10",
+    critical:
+      "from-red-500/20 via-red-500/10 to-red-600/20 border-red-500/40 shadow-red-500/10",
     high: "from-orange-500/20 via-orange-500/10 to-orange-600/20 border-orange-500/40 shadow-orange-500/10",
-    medium: "from-yellow-500/20 via-yellow-500/10 to-yellow-600/20 border-yellow-500/40 shadow-yellow-500/10",
+    medium:
+      "from-yellow-500/20 via-yellow-500/10 to-yellow-600/20 border-yellow-500/40 shadow-yellow-500/10",
     low: "from-emerald-500/20 via-emerald-500/10 to-emerald-600/20 border-emerald-500/40 shadow-emerald-500/10",
     safe: "from-emerald-500/20 via-emerald-500/10 to-emerald-600/20 border-emerald-500/40 shadow-emerald-500/10",
   };
@@ -747,10 +848,14 @@ const VerdictCard = ({
   };
 
   return (
-    <div className={`bg-gradient-to-br ${severityColors[verdict.severity]} border rounded-lg p-5 shadow-lg h-full flex flex-col`}>
+    <div
+      className={`bg-gradient-to-br ${severityColors[verdict.severity]} border rounded-lg p-5 shadow-lg h-full flex flex-col`}
+    >
       <div className="mb-3 flex-shrink-0 flex items-center justify-between">
         <div>
-          <h3 className={`text-base font-bold ${textColors[verdict.severity]} mb-1`}>
+          <h3
+            className={`text-base font-bold ${textColors[verdict.severity]} mb-1`}
+          >
             VERDICT: {verdict.title}
           </h3>
           <p className={`text-xs ${textColors[verdict.severity]} opacity-70`}>
@@ -780,8 +885,7 @@ const VerdictCard = ({
 
         <div className="pt-2 border-t border-white/10">
           <p className="font-semibold text-white mb-1">
-            Recommended Fix:{" "}
-            <span className="font-normal">{verdict.fix}</span>
+            Recommended Fix: <span className="font-normal">{verdict.fix}</span>
           </p>
         </div>
       </div>
