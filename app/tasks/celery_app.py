@@ -11,7 +11,7 @@ celery_app = Celery(
     "protectsus",
     broker=settings.CELERY_BROKER_URL,
     backend=settings.CELERY_RESULT_BACKEND,
-    include=['app.tasks.analysis_tasks']
+    include=['app.tasks.analysis_tasks', 'app.tasks.pr_workflow_tasks']
 )
 
 # Celery configuration

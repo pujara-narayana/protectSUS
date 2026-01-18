@@ -300,3 +300,204 @@ class GitHubService:
                 logger.info(f"Cleaned up repository at {repo_path}")
         except Exception as e:
             logger.warning(f"Error cleaning up repository: {e}")
+
+    async def get_pull_request(
+        self,
+        repo_full_name: str,
+        pr_number: int
+    ) -> Dict[str, Any]:
+        """
+        Get pull request details
+
+        Args:
+            repo_full_name: Full repository name (owner/repo)
+            pr_number: PR number
+
+        Returns:
+            Dictionary with PR details
+        """
+        try:
+            gh = self.get_installation_client(repo_full_name)
+            repo = gh.get_repo(repo_full_name)
+            pr = repo.get_pull(pr_number)
+
+            return {
+                'number': pr.number,
+                'title': pr.title,
+                'body': pr.body,
+                'state': pr.state,
+                'mergeable': pr.mergeable,
+                'mergeable_state': pr.mergeable_state,
+                'merged': pr.merged,
+                'head': {
+                    'ref': pr.head.ref,
+                    'sha': pr.head.sha
+                },
+                'base': {
+                    'ref': pr.base.ref,
+                    'sha': pr.base.sha
+                },
+                'html_url': pr.html_url,
+                'user': {
+                    'login': pr.user.login,
+                    'type': pr.user.type
+                }
+            }
+
+        except Exception as e:
+            logger.error(f"Error getting PR #{pr_number}: {e}")
+            raise
+
+    async def check_pr_mergeable(
+        self,
+        repo_full_name: str,
+        pr_number: int
+    ) -> Dict[str, Any]:
+        """
+        Check if PR is mergeable (no conflicts)
+
+        Args:
+            repo_full_name: Full repository name (owner/repo)
+            pr_number: PR number
+
+        Returns:
+            Dictionary with mergeable status and details
+        """
+        try:
+            gh = self.get_installation_client(repo_full_name)
+            repo = gh.get_repo(repo_full_name)
+            pr = repo.get_pull(pr_number)
+
+            # GitHub API may return None initially, need to refresh
+            if pr.mergeable is None:
+                # Trigger mergeable calculation by accessing the PR again
+                pr = repo.get_pull(pr_number)
+
+            return {
+                'mergeable': pr.mergeable or False,
+                'mergeable_state': pr.mergeable_state,
+                'has_conflicts': pr.mergeable is False,
+                'state': pr.state
+            }
+
+        except Exception as e:
+            logger.error(f"Error checking PR #{pr_number} mergeable status: {e}")
+            raise
+
+    async def merge_pull_request(
+        self,
+        repo_full_name: str,
+        pr_number: int,
+        merge_method: str = "squash",
+        commit_title: Optional[str] = None,
+        commit_message: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Merge a pull request
+
+        Args:
+            repo_full_name: Full repository name (owner/repo)
+            pr_number: PR number
+            merge_method: Merge method (merge, squash, rebase)
+            commit_title: Optional custom commit title
+            commit_message: Optional custom commit message
+
+        Returns:
+            Dictionary with merge status
+        """
+        try:
+            gh = self.get_installation_client(repo_full_name)
+            repo = gh.get_repo(repo_full_name)
+            pr = repo.get_pull(pr_number)
+
+            # Check if PR is mergeable
+            if not pr.mergeable:
+                raise ValueError(f"PR #{pr_number} is not mergeable (has conflicts)")
+
+            if pr.merged:
+                raise ValueError(f"PR #{pr_number} is already merged")
+
+            # Merge the PR
+            merge_result = pr.merge(
+                commit_title=commit_title,
+                commit_message=commit_message,
+                merge_method=merge_method
+            )
+
+            logger.info(f"Successfully merged PR #{pr_number} using {merge_method} method")
+
+            return {
+                'merged': merge_result.merged,
+                'sha': merge_result.sha,
+                'message': merge_result.message
+            }
+
+        except GithubException as e:
+            logger.error(f"GitHub API error merging PR #{pr_number}: {e}")
+            raise
+        except Exception as e:
+            logger.error(f"Error merging PR #{pr_number}: {e}")
+            raise
+
+    async def close_pull_request(
+        self,
+        repo_full_name: str,
+        pr_number: int,
+        comment: Optional[str] = None
+    ):
+        """
+        Close a pull request without merging
+
+        Args:
+            repo_full_name: Full repository name (owner/repo)
+            pr_number: PR number
+            comment: Optional comment to add before closing
+        """
+        try:
+            gh = self.get_installation_client(repo_full_name)
+            repo = gh.get_repo(repo_full_name)
+            pr = repo.get_pull(pr_number)
+
+            # Add comment if provided
+            if comment:
+                pr.create_issue_comment(comment)
+
+            # Close the PR
+            pr.edit(state='closed')
+
+            logger.info(f"Closed PR #{pr_number}")
+
+        except Exception as e:
+            logger.error(f"Error closing PR #{pr_number}: {e}")
+            raise
+
+    async def check_user_authorization(
+        self,
+        repo_full_name: str,
+        username: str
+    ) -> bool:
+        """
+        Check if user is a repository collaborator (has write access)
+
+        Args:
+            repo_full_name: Full repository name (owner/repo)
+            username: GitHub username to check
+
+        Returns:
+            True if user is a collaborator, False otherwise
+        """
+        try:
+            gh = self.get_installation_client(repo_full_name)
+            repo = gh.get_repo(repo_full_name)
+
+            # Check if user is a collaborator
+            is_collaborator = repo.has_in_collaborators(username)
+
+            logger.info(f"User {username} collaborator status for {repo_full_name}: {is_collaborator}")
+
+            return is_collaborator
+
+        except Exception as e:
+            logger.error(f"Error checking authorization for {username}: {e}")
+            # Default to False on error (safe default)
+            return False
