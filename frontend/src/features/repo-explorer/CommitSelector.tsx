@@ -64,9 +64,9 @@ const CommitSelector = ({ onSelectCommit, onSignOut, session }: { onSelectCommit
   return (
     <div className="min-h-screen bg-zinc-950 py-12">
       <div className="max-w-5xl mx-auto px-6 sm:px-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl text-white">Select a Commit to Audit</h1>
-          <button onClick={onSignOut} className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
+          <h1 className="text-2xl sm:text-3xl text-white">Select a Commit to Audit</h1>
+          <button onClick={onSignOut} className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors px-3 py-2 rounded-lg hover:bg-zinc-800/50">
             <LogOut className="w-4 h-4" />
             Logout
           </button>
@@ -114,17 +114,17 @@ const CommitSelector = ({ onSelectCommit, onSignOut, session }: { onSelectCommit
                     ) : (
                       <ul className="space-y-3 pt-4">
                         {(commits[repo.id] || []).slice(0, 10).map(commit => (
-                          <li key={commit.sha} className="flex items-center justify-between">
-                            <div className="flex-1">
+                          <li key={commit.sha} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-2">
+                            <div className="flex-1 min-w-0">
                                <div className="flex items-center gap-3">
-                                <GitCommit className="w-4 h-4 text-zinc-500" />
+                                <GitCommit className="w-4 h-4 text-zinc-500 flex-shrink-0" />
                                 <code className="font-mono text-sm text-blue-400">{commit.sha.substring(0, 7)}</code>
                                </div>
-                               <p className="text-zinc-300 mt-1 ml-7 text-sm">{commit.commit.message}</p>
+                               <p className="text-zinc-300 mt-1 ml-7 text-sm line-clamp-2 break-words">{commit.commit.message}</p>
                             </div>
                              <button
                               onClick={() => onSelectCommit(repo, commit)}
-                              className="ml-6 px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-500 hover:to-indigo-500 transition-all duration-200 text-sm"
+                              className="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-500 hover:to-indigo-500 transition-all duration-200 text-xs sm:text-sm whitespace-nowrap"
                             >
                               Audit
                             </button>

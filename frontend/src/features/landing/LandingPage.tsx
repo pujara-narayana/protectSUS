@@ -275,7 +275,26 @@ const LandingPage = ({ onSignIn }: { onSignIn: () => void }) => {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
+  );
+};
+
+const Footer = () => {
+  return (
+    <footer className="bg-zinc-950/80 border-t border-zinc-800">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-8">
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+          <p className="text-sm text-zinc-400">
+            © {new Date().getFullYear()} ProtectSUS · Built for NexHacks 2026
+          </p>
+          <div className="flex gap-6 text-sm text-zinc-400">
+            <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
+            <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+          </div>
+        </div>
+      </div>
+    </footer>
   );
 };
 
