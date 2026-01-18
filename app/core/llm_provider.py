@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 class LLMProvider(str, Enum):
     """Supported LLM providers"""
+
     ANTHROPIC = "anthropic"
     OPENAI = "openai"
     GEMINI = "gemini"
@@ -47,7 +48,9 @@ class LLMClient:
             else:
                 raise ValueError(f"Unsupported LLM provider: {self.provider}")
 
-            logger.info(f"Initialized LLM provider: {self.provider} with model: {self.model}")
+            logger.info(
+                f"Initialized LLM provider: {self.provider} with model: {self.model}"
+            )
 
         except Exception as e:
             logger.error(f"Error initializing LLM provider {self.provider}: {e}")
@@ -59,6 +62,7 @@ class LLMClient:
             raise ValueError("ANTHROPIC_API_KEY not set in environment")
 
         from anthropic import Anthropic
+
         self.client = Anthropic(api_key=settings.ANTHROPIC_API_KEY)
         self.model = "claude-3-5-sonnet-20241022"
 
@@ -68,6 +72,7 @@ class LLMClient:
             raise ValueError("OPENAI_API_KEY not set in environment")
 
         from openai import OpenAI
+
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
         self.model = "gpt-4-turbo-preview"  # or gpt-4, gpt-3.5-turbo
 
@@ -77,6 +82,7 @@ class LLMClient:
             raise ValueError("GOOGLE_API_KEY not set in environment")
 
         import google.generativeai as genai
+
         genai.configure(api_key=settings.GOOGLE_API_KEY)
         self.client = genai
         self.model = "gemini-pro"
@@ -87,9 +93,9 @@ class LLMClient:
             raise ValueError("OPENROUTER_API_KEY not set in environment")
 
         from openai import OpenAI
+
         self.client = OpenAI(
-            api_key=settings.OPENROUTER_API_KEY,
-            base_url="https://openrouter.ai/api/v1"
+            api_key=settings.OPENROUTER_API_KEY, base_url="https://openrouter.ai/api/v1"
         )
         self.model = "anthropic/claude-3.5-sonnet"  # Can use any OpenRouter model
 
@@ -98,7 +104,7 @@ class LLMClient:
         system_prompt: str,
         user_prompt: str,
         temperature: float = 0.0,
-        max_tokens: int = 4096
+        max_tokens: int = 4096,
     ) -> Dict[str, Any]:
         """
         Generate response from LLM
@@ -114,23 +120,27 @@ class LLMClient:
         """
         try:
             if self.provider == LLMProvider.ANTHROPIC:
-                return await self._generate_anthropic(system_prompt, user_prompt, temperature, max_tokens)
+                return await self._generate_anthropic(
+                    system_prompt, user_prompt, temperature, max_tokens
+                )
             elif self.provider == LLMProvider.OPENAI:
-                return await self._generate_openai(system_prompt, user_prompt, temperature, max_tokens)
+                return await self._generate_openai(
+                    system_prompt, user_prompt, temperature, max_tokens
+                )
             elif self.provider == LLMProvider.GEMINI:
-                return await self._generate_gemini(system_prompt, user_prompt, temperature, max_tokens)
+                return await self._generate_gemini(
+                    system_prompt, user_prompt, temperature, max_tokens
+                )
             elif self.provider == LLMProvider.OPENROUTER:
-                return await self._generate_openrouter(system_prompt, user_prompt, temperature, max_tokens)
+                return await self._generate_openrouter(
+                    system_prompt, user_prompt, temperature, max_tokens
+                )
         except Exception as e:
             logger.error(f"Error generating with {self.provider}: {e}")
             raise
 
     async def _generate_anthropic(
-        self,
-        system_prompt: str,
-        user_prompt: str,
-        temperature: float,
-        max_tokens: int
+        self, system_prompt: str, user_prompt: str, temperature: float, max_tokens: int
     ) -> Dict[str, Any]:
         """Generate using Anthropic Claude"""
         response = self.client.messages.create(
@@ -138,9 +148,7 @@ class LLMClient:
             max_tokens=max_tokens,
             temperature=temperature,
             system=system_prompt,
-            messages=[
-                {"role": "user", "content": user_prompt}
-            ]
+            messages=[{"role": "user", "content": user_prompt}],
         )
 
         return {
@@ -148,26 +156,23 @@ class LLMClient:
             "usage": {
                 "input_tokens": response.usage.input_tokens,
                 "output_tokens": response.usage.output_tokens,
-                "total_tokens": response.usage.input_tokens + response.usage.output_tokens
-            }
+                "total_tokens": response.usage.input_tokens
+                + response.usage.output_tokens,
+            },
         }
 
     async def _generate_openai(
-        self,
-        system_prompt: str,
-        user_prompt: str,
-        temperature: float,
-        max_tokens: int
+        self, system_prompt: str, user_prompt: str, temperature: float, max_tokens: int
     ) -> Dict[str, Any]:
         """Generate using OpenAI GPT"""
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
+                {"role": "user", "content": user_prompt},
             ],
             temperature=temperature,
-            max_tokens=max_tokens
+            max_tokens=max_tokens,
         )
 
         return {
@@ -175,16 +180,12 @@ class LLMClient:
             "usage": {
                 "input_tokens": response.usage.prompt_tokens,
                 "output_tokens": response.usage.completion_tokens,
-                "total_tokens": response.usage.total_tokens
-            }
+                "total_tokens": response.usage.total_tokens,
+            },
         }
 
     async def _generate_gemini(
-        self,
-        system_prompt: str,
-        user_prompt: str,
-        temperature: float,
-        max_tokens: int
+        self, system_prompt: str, user_prompt: str, temperature: float, max_tokens: int
     ) -> Dict[str, Any]:
         """Generate using Google Gemini"""
         model = self.client.GenerativeModel(
@@ -192,7 +193,7 @@ class LLMClient:
             generation_config={
                 "temperature": temperature,
                 "max_output_tokens": max_tokens,
-            }
+            },
         )
 
         # Gemini doesn't have separate system prompt, so combine them
@@ -209,40 +210,35 @@ class LLMClient:
             "usage": {
                 "input_tokens": 0,  # Not available
                 "output_tokens": int(estimated_tokens),
-                "total_tokens": int(estimated_tokens)
-            }
+                "total_tokens": int(estimated_tokens),
+            },
         }
 
     async def _generate_openrouter(
-        self,
-        system_prompt: str,
-        user_prompt: str,
-        temperature: float,
-        max_tokens: int
+        self, system_prompt: str, user_prompt: str, temperature: float, max_tokens: int
     ) -> Dict[str, Any]:
         """Generate using OpenRouter"""
         response = self.client.chat.completions.create(
             model=self.model,
             messages=[
                 {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_prompt}
+                {"role": "user", "content": user_prompt},
             ],
             temperature=temperature,
-            max_tokens=max_tokens
+            max_tokens=max_tokens,
         )
 
         return {
             "text": response.choices[0].message.content,
             "usage": {
                 "input_tokens": response.usage.prompt_tokens if response.usage else 0,
-                "output_tokens": response.usage.completion_tokens if response.usage else 0,
-                "total_tokens": response.usage.total_tokens if response.usage else 0
-            }
+                "output_tokens": (
+                    response.usage.completion_tokens if response.usage else 0
+                ),
+                "total_tokens": response.usage.total_tokens if response.usage else 0,
+            },
         }
 
     def get_model_info(self) -> Dict[str, str]:
         """Get information about the current model"""
-        return {
-            "provider": self.provider,
-            "model": self.model
-        }
+        return {"provider": self.provider, "model": self.model}

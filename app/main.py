@@ -8,6 +8,7 @@ import logging
 from app.core.config import settings
 from app.core.database import connect_databases, disconnect_databases
 from app.api.v1 import webhooks, analysis, feedback, chat
+from app.api import auth
 
 # Configure logging
 logging.basicConfig(
@@ -51,6 +52,7 @@ app.add_middleware(
 )
 
 # Include routers
+app.include_router(auth.router, tags=["authentication"])  # Auth at root level for /auth callback
 app.include_router(webhooks.router, prefix="/api/v1", tags=["webhooks"])
 app.include_router(analysis.router, prefix="/api/v1", tags=["analysis"])
 app.include_router(feedback.router, prefix="/api/v1", tags=["feedback"])
