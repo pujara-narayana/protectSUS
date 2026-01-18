@@ -289,8 +289,12 @@ const Footer = () => {
             © {new Date().getFullYear()} ProtectSUS · Built for NexHacks 2026
           </p>
           <div className="flex gap-6 text-sm text-zinc-400">
-            <a href="#" className="hover:text-white transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-white transition-colors">Terms of Service</a>
+            <a href="#" className="hover:text-white transition-colors">
+              Privacy Policy
+            </a>
+            <a href="#" className="hover:text-white transition-colors">
+              Terms of Service
+            </a>
           </div>
         </div>
       </div>
@@ -327,12 +331,18 @@ const DemoSection = () => {
       <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-indigo-600/10 blur-3xl"></div>
       <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12">
         <div
-          className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 aspect-video flex items-center justify-center transition-transform duration-100 ease-out"
+          className="bg-zinc-900/50 border border-zinc-800 rounded-xl overflow-hidden aspect-video transition-transform duration-100 ease-out"
           style={{
             transform: `translateY(${(0.5 - offsetY) * 50}px) scale(${0.95 + offsetY * 0.05})`,
           }}
         >
-          <p className="text-zinc-500">[Demo Video Placeholder]</p>
+          <iframe
+            className="w-full h-full"
+            src="https://www.youtube.com/embed/Obq2vTh7gec"
+            title="ProtectSUS Demo"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
         </div>
       </div>
     </div>
