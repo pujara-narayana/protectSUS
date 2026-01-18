@@ -2,7 +2,7 @@
 
 from cryptography.fernet import Fernet
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2
+from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.backends import default_backend
 import base64
 from app.core.config import settings
@@ -19,7 +19,7 @@ def _get_encryption_key() -> bytes:
     # In production, you might want to store this separately
     salt = b'protectsus_token_encryption_salt'
 
-    kdf = PBKDF2(
+    kdf = PBKDF2HMAC(
         algorithm=hashes.SHA256(),
         length=32,
         salt=salt,
