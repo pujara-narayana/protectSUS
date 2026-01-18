@@ -201,11 +201,52 @@ export const Dashboard = ({
       if (response.ok) {
         const data = await response.json();
         console.log("Audit triggered:", data);
-        // Wait a bit then refresh analysis
-        setTimeout(() => {
-          fetchAnalysis();
+
+        // If analysis already exists, fetch it immediately
+        if (data.status === "exists") {
+          await fetchAnalysis();
           setAuditTriggering(false);
-        }, 3000);
+          return;
+        }
+
+        // Poll for analysis completion (every 5 seconds for up to 2 minutes)
+        let attempts = 0;
+        const maxAttempts = 24; // 2 minutes (5s * 24)
+
+        const pollInterval = setInterval(async () => {
+          attempts++;
+          console.log(`Polling for analysis... attempt ${attempts}/${maxAttempts}`);
+
+          try {
+            const statusResponse = await fetch(
+              `${API_URL}/api/v1/analysis/${data.analysis_id}/status`
+            );
+
+            if (statusResponse.ok) {
+              const statusData = await statusResponse.json();
+
+              if (statusData.status === "completed") {
+                clearInterval(pollInterval);
+                await fetchAnalysis();
+                setAuditTriggering(false);
+                console.log("Analysis completed!");
+              } else if (statusData.status === "failed") {
+                clearInterval(pollInterval);
+                setAuditTriggering(false);
+                console.error("Analysis failed");
+              }
+            }
+          } catch (pollError) {
+            console.error("Polling error:", pollError);
+          }
+
+          if (attempts >= maxAttempts) {
+            clearInterval(pollInterval);
+            setAuditTriggering(false);
+            console.log("Polling timeout - check manually");
+            await fetchAnalysis();
+          }
+        }, 5000);
       } else {
         console.error("Failed to trigger audit");
         setAuditTriggering(false);
