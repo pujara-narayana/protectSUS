@@ -74,7 +74,7 @@ class LLMClient:
         from openai import OpenAI
 
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
-        self.model = "gpt-4-turbo-preview"  # or gpt-4, gpt-3.5-turbo
+        self.model = "gpt-4o"  # Latest GPT-4 model (gpt-4o, gpt-4-turbo, gpt-3.5-turbo)
 
     def _init_gemini(self):
         """Initialize Google Gemini client"""
