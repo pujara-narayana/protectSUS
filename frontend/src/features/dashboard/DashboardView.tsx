@@ -96,14 +96,40 @@ export const Dashboard = ({
         <VerdictCard />
       </div>
 
+      {/* Desktop Tab Navigation */}
+      <div className="hidden md:block max-w-[1800px] mx-auto px-4 sm:px-6 md:px-8 pt-4">
+        <div className="flex gap-2 border-b border-zinc-800 pb-4">
+          <button
+            onClick={() => setActiveTab("files")}
+            className={`py-2 px-6 rounded-lg font-medium text-sm transition-colors ${activeTab === "files" || activeTab === "code" || activeTab === "debate"
+              ? "bg-zinc-800 text-zinc-400"
+              : "bg-zinc-800 text-zinc-400"
+              }`}
+          >
+            <Folder className="w-4 h-4 inline mr-2" />
+            Code Explorer
+          </button>
+          <button
+            onClick={() => setActiveTab("kg")}
+            className={`py-2 px-6 rounded-lg font-medium text-sm transition-colors ${activeTab === "kg"
+              ? "bg-blue-600 text-white"
+              : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+              }`}
+          >
+            <Network className="w-4 h-4 inline mr-2" />
+            Knowledge Graph
+          </button>
+        </div>
+      </div>
+
       {/* Mobile Tab Navigation */}
       <div className="md:hidden max-w-[1800px] mx-auto px-4 sm:px-6 pt-4">
         <div className="flex gap-2">
           <button
             onClick={() => setActiveTab("files")}
             className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${activeTab === "files"
-                ? "bg-blue-600 text-white"
-                : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+              ? "bg-blue-600 text-white"
+              : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
               }`}
           >
             File Explorer
@@ -111,8 +137,8 @@ export const Dashboard = ({
           <button
             onClick={() => setActiveTab("code")}
             className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${activeTab === "code"
-                ? "bg-blue-600 text-white"
-                : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+              ? "bg-blue-600 text-white"
+              : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
               }`}
           >
             Code View
@@ -120,8 +146,8 @@ export const Dashboard = ({
           <button
             onClick={() => setActiveTab("debate")}
             className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${activeTab === "debate"
-                ? "bg-blue-600 text-white"
-                : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+              ? "bg-blue-600 text-white"
+              : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
               }`}
           >
             Agent Debate
@@ -129,8 +155,8 @@ export const Dashboard = ({
           <button
             onClick={() => setActiveTab("kg")}
             className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${activeTab === "kg"
-                ? "bg-blue-600 text-white"
-                : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+              ? "bg-blue-600 text-white"
+              : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
               }`}
           >
             <Network className="w-4 h-4 inline mr-1" />
@@ -142,8 +168,8 @@ export const Dashboard = ({
       {/* Main Content */}
       <div className="max-w-[1800px] mx-auto px-4 sm:px-6 md:px-8 py-6 w-full">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
-          {/* File Explorer (Mobile: conditional, Desktop: always visible) */}
-          <div className={`col-span-1 md:col-span-2 ${activeTab === "files" ? "block" : "hidden md:block"}`}>
+          {/* File Explorer (Mobile: conditional, Desktop: hide when KG active) */}
+          <div className={`col-span-1 md:col-span-2 ${activeTab === "files" ? "block" : "hidden"} ${activeTab === "kg" ? "hidden" : "md:block"}`}>
             <div className="md:h-[calc(120vh-16rem)] h-[60vh]">
               <div className="bg-zinc-900/30 rounded-lg border border-zinc-800 p-4 h-full overflow-y-auto">
                 <FileTree tree={tree} onFileClick={handleFileClick} selectedFile={selectedFile} />
@@ -151,8 +177,8 @@ export const Dashboard = ({
             </div>
           </div>
 
-          {/* Code View (Mobile: conditional, Desktop: always visible) */}
-          <div className={`col-span-1 md:col-span-7 ${activeTab === "code" ? "block" : "hidden md:block"}`}>
+          {/* Code View (Mobile: conditional, Desktop: hide when KG active) */}
+          <div className={`col-span-1 md:col-span-7 ${activeTab === "code" ? "block" : "hidden"} ${activeTab === "kg" ? "hidden" : "md:block"}`}>
             <div className="md:h-[calc(120vh-16rem)] h-[60vh]">
               <div className="bg-[#1a1a1a] rounded-lg border border-zinc-800 overflow-hidden h-full flex flex-col">
                 {/* Code Header */}
@@ -169,8 +195,8 @@ export const Dashboard = ({
             </div>
           </div>
 
-          {/* Agent Debate (Mobile: conditional, Desktop: always visible) */}
-          <div className={`col-span-1 md:col-span-3 ${activeTab === "debate" ? "block" : "hidden md:block"}`}>
+          {/* Agent Debate (Mobile: conditional, Desktop: hide when KG active) */}
+          <div className={`col-span-1 md:col-span-3 ${activeTab === "debate" ? "block" : "hidden"} ${activeTab === "kg" ? "hidden" : "md:block"}`}>
             <div className="md:h-[calc(120vh-16rem)] h-[60vh]">
               <div className="h-full bg-zinc-900/30 rounded-lg border border-zinc-800 overflow-hidden flex flex-col">
                 {/* Agent Chat Header */}
@@ -279,8 +305,8 @@ const TabButton = ({
 }) => (
   <button
     className={`px-6 py-2 rounded-lg font-medium text-sm transition-colors ${active
-        ? "bg-red-500/80 text-white"
-        : "bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-white"
+      ? "bg-red-500/80 text-white"
+      : "bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-white"
       }`}
   >
     {children}
