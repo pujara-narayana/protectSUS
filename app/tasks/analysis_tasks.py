@@ -175,6 +175,7 @@ async def _run_analysis_async(
 
         # Step 6: Generate fixes if vulnerabilities found
         pr_info = None
+        fixes = []  # Initialize fixes list
         if analysis_result['vulnerabilities']:
             logger.info(f"Step 6: Generating fixes for {len(analysis_result['vulnerabilities'])} vulnerabilities")
 
@@ -199,6 +200,7 @@ async def _run_analysis_async(
 
         # Step 8: Update analysis with results
         logger.info("Step 8: Saving analysis results")
+        
         await _update_analysis_status(
             analysis_id,
             AnalysisStatus.COMPLETED,
@@ -212,7 +214,9 @@ async def _run_analysis_async(
                 'total_execution_time': analysis_result['total_execution_time'],
                 'total_tokens_used': analysis_result['total_tokens_used'],
                 'pr_number': pr_info['pr_number'] if pr_info else None,
-                'pr_url': pr_info['pr_url'] if pr_info else None
+                'pr_url': pr_info['pr_url'] if pr_info else None,
+                'code_files': code_files,  # Store for regeneration
+                'fixes': fixes  # Store fixes for regeneration
             }
         )
 
