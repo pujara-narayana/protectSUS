@@ -77,7 +77,8 @@ def setup_phoenix_tracing(
         # via the auto_instrument parameter
         _tracer_provider = register(
             project_name=project_name,
-            auto_instrument=True  # Auto-instrument OpenAI, Anthropic, LangChain
+            endpoint=clean_url,
+            auto_instrument=True,  # Enable auto-instrumentation for all supported libraries
         )
 
         print(f"[PHOENIX] ✓ Tracing initialized!")
