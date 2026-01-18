@@ -131,14 +131,27 @@ class TriggerAnalysisRequest(BaseModel):
 
 
 @router.post("/analysis/trigger")
-async def trigger_analysis(request: TriggerAnalysisRequest):
+async def trigger_analysis(request: TriggerAnalysisRequest, user_id: str = Query(None)):
     """
     Manually trigger a security analysis for a repository at a specific commit.
     
     This endpoint allows the frontend to trigger an on-demand security audit
-    without requiring a push event.
+    without requiring a push event. If user_id is provided, their custom
+    LLM settings (API key and provider) will be used for the analysis.
     """
     try:
+        # Get user's LLM settings if user_id provided
+        user_settings = None
+        if user_id:
+            db = MongoDB.get_database()
+            user = await db.users.find_one({"github_id": int(user_id)})
+            if user and user.get("settings"):
+                user_settings = {
+                    "llm_provider": user["settings"].get("llm_provider"),
+                    "api_key": user["settings"].get("api_key")
+                }
+                logger.info(f"Using custom LLM settings for user {user_id}: provider={user_settings.get('llm_provider')}")
+        
         # Check if analysis already exists for this commit
         db = MongoDB.get_database()
         existing = await db.analyses.find_one({
@@ -153,11 +166,12 @@ async def trigger_analysis(request: TriggerAnalysisRequest):
                 "message": "Analysis already exists for this commit"
             }
         
-        # Trigger new analysis
+        # Trigger new analysis with user settings
         analysis_id = await AnalysisService.trigger_analysis(
             repo_full_name=request.repo_full_name,
             commit_sha=request.commit_sha,
-            clone_url=request.clone_url
+            clone_url=request.clone_url,
+            user_settings=user_settings
         )
         
         logger.info(f"Manually triggered analysis {analysis_id} for {request.repo_full_name}@{request.commit_sha[:7]}")

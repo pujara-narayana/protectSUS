@@ -188,7 +188,11 @@ export const Dashboard = ({
 
     setAuditTriggering(true);
     try {
-      const response = await fetch(`${API_URL}/api/v1/analysis/trigger`, {
+      // Include user_id so backend can use user's LLM settings
+      const userId = (session?.user as any)?.id || "";
+      const url = `${API_URL}/api/v1/analysis/trigger${userId ? `?user_id=${userId}` : ""}`;
+
+      const response = await fetch(url, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -328,13 +332,12 @@ export const Dashboard = ({
         <div className="flex gap-2 border-b border-zinc-800 pb-4">
           <button
             onClick={() => setActiveTab("files")}
-            className={`py-2 px-6 rounded-lg font-medium text-sm transition-colors ${
-              activeTab === "files" ||
-              activeTab === "code" ||
-              activeTab === "debate"
+            className={`py-2 px-6 rounded-lg font-medium text-sm transition-colors ${activeTab === "files" ||
+                activeTab === "code" ||
+                activeTab === "debate"
                 ? "bg-zinc-800 text-zinc-400"
                 : "bg-zinc-800 text-zinc-400"
-            }`}
+              }`}
           >
             <Folder className="w-4 h-4 inline mr-2" />
             Code Explorer
@@ -347,31 +350,28 @@ export const Dashboard = ({
         <div className="flex gap-2">
           <button
             onClick={() => setActiveTab("files")}
-            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
-              activeTab === "files"
+            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${activeTab === "files"
                 ? "bg-blue-600 text-white"
                 : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-            }`}
+              }`}
           >
             File Explorer
           </button>
           <button
             onClick={() => setActiveTab("code")}
-            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
-              activeTab === "code"
+            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${activeTab === "code"
                 ? "bg-blue-600 text-white"
                 : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-            }`}
+              }`}
           >
             Code View
           </button>
           <button
             onClick={() => setActiveTab("debate")}
-            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
-              activeTab === "debate"
+            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${activeTab === "debate"
                 ? "bg-blue-600 text-white"
                 : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-            }`}
+              }`}
           >
             Agent Debate
           </button>
@@ -657,11 +657,10 @@ const FileTree = ({
           <div
             key={i}
             onClick={() => onFileClick(file)}
-            className={`flex items-center gap-2 px-3 py-2 rounded cursor-pointer transition-colors group ${
-              selectedFile?.path === file.path
+            className={`flex items-center gap-2 px-3 py-2 rounded cursor-pointer transition-colors group ${selectedFile?.path === file.path
                 ? "bg-blue-600/20"
                 : "hover:bg-zinc-800/50"
-            }`}
+              }`}
           >
             <File className="w-4 h-4 text-blue-500" />
             <span className="text-sm text-zinc-400 group-hover:text-white font-mono">
@@ -799,11 +798,10 @@ const VerdictCard = ({
           <button
             onClick={onTriggerAudit}
             disabled={triggering}
-            className={`py-2 px-4 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 shadow-lg whitespace-nowrap ${
-              triggering
+            className={`py-2 px-4 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 shadow-lg whitespace-nowrap ${triggering
                 ? "bg-indigo-600 text-white cursor-wait"
                 : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white cursor-pointer"
-            }`}
+              }`}
           >
             {triggering ? (
               <>
