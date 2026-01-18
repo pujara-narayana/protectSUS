@@ -22,83 +22,61 @@ def setup_phoenix_tracing(
     - Anthropic SDK calls (messages)
     - LangChain/LangGraph workflows
     - Custom spans for agent workflows
-
-    Args:
-        project_name: Name of the project in Phoenix (default: "protectsus-agents")
-        enabled: Whether to enable tracing (default: True)
-        api_key: Phoenix API key for cloud (reads from env if not provided)
-        base_url: Phoenix base URL (reads from env if not provided)
-        client_headers: Custom headers for authentication (reads from env if not provided)
-
-    Returns:
-        TracerProvider object if successful, None if disabled or failed
-
-    Environment Variables:
-        PHOENIX_ENABLED: Enable/disable tracing (default: True)
-        PHOENIX_API_KEY: API key for Phoenix cloud
-        PHOENIX_BASE_URL: Base URL (e.g., https://app.phoenix.arize.com/s/your-space)
-        PHOENIX_CLIENT_HEADERS: Custom headers (e.g., "Authorization=Bearer token")
-
-    References:
-        - Phoenix Docs: https://arize.com/docs/phoenix
-        - Tracing Guide: https://arize.com/docs/phoenix/get-started/get-started-tracing
-        - OpenAI Integration: https://arize.com/docs/phoenix/tracing/integrations-tracing/openai
-        - Anthropic Integration: https://arize.com/docs/phoenix/tracing/integrations-tracing/anthropic
-        - LangChain Integration: https://arize.com/docs/phoenix/tracing/integrations-tracing/langchain
     """
 
     if not enabled:
-        logger.info("Phoenix tracing is disabled")
+        print("[PHOENIX] Tracing is disabled")
         return None
 
     try:
-        # Set environment variables for Phoenix
+        print(f"[PHOENIX] Setting up tracing...")
+        print(f"[PHOENIX] API Key present: {bool(api_key)}")
+        print(f"[PHOENIX] Base URL: {base_url}")
+        
+        # Set environment variables for Phoenix OTEL
         if api_key:
-            os.environ["PHOENIX_API_KEY"] = api_key
-            logger.debug(f"Set PHOENIX_API_KEY")
+            # Remove quotes if present
+            clean_api_key = api_key.strip("'\"")
+            os.environ["PHOENIX_API_KEY"] = clean_api_key
+            print(f"[PHOENIX] Set PHOENIX_API_KEY")
 
         if base_url:
-            os.environ["PHOENIX_BASE_URL"] = base_url
-            logger.debug(f"Set PHOENIX_BASE_URL: {base_url}")
-
-        if client_headers:
-            os.environ["PHOENIX_CLIENT_HEADERS"] = client_headers
-            logger.debug(f"Set PHOENIX_CLIENT_HEADERS")
+            # Remove quotes if present  
+            clean_url = base_url.strip("'\"")
+            # Phoenix OTEL uses PHOENIX_COLLECTOR_ENDPOINT
+            os.environ["PHOENIX_COLLECTOR_ENDPOINT"] = clean_url
+            print(f"[PHOENIX] Set PHOENIX_COLLECTOR_ENDPOINT: {clean_url}")
 
         # Import Phoenix OTEL register
         from phoenix.otel import register
+        print("[PHOENIX] Imported phoenix.otel.register")
 
         # Configure the Phoenix tracer with auto-instrumentation
-        logger.info("Registering Phoenix tracer with auto-instrumentation...")
+        print(f"[PHOENIX] Registering tracer for project: {project_name}")
         tracer_provider = register(
             project_name=project_name,
             auto_instrument=True  # Auto-instrument OpenAI, Anthropic, LangChain
         )
 
-        endpoint_info = base_url or "http://localhost:6006"
-
-        logger.info(
-            f"✓ Phoenix tracing initialized successfully\n"
-            f"  Project: {project_name}\n"
-            f"  Endpoint: {endpoint_info}\n"
-            f"  Auto-instrumentation: Enabled\n"
-            f"  Supported SDKs: OpenAI, Anthropic, LangChain/LangGraph"
-        )
+        print(f"[PHOENIX] ✓ Tracing initialized successfully!")
+        print(f"[PHOENIX]   Project: {project_name}")
+        print(f"[PHOENIX]   Endpoint: {base_url}")
+        
+        logger.info(f"✓ Phoenix tracing initialized for {project_name}")
 
         return tracer_provider
 
     except ImportError as e:
-        logger.warning(
-            f"Phoenix tracing packages not installed: {e}\n"
-            f"Install with:\n"
-            f"  pip install arize-phoenix-otel\n"
-            f"  pip install openinference-instrumentation-openai\n"
-            f"  pip install openinference-instrumentation-anthropic\n"
-            f"  pip install openinference-instrumentation-langchain"
-        )
+        print(f"[PHOENIX] ❌ Import error: {e}")
+        logger.warning(f"Phoenix tracing packages not installed: {e}")
         return None
 
     except Exception as e:
+        print(f"[PHOENIX] ❌ Error: {e}")
+        import traceback
+        traceback.print_exc()
+        logger.error(f"Failed to initialize Phoenix tracing: {e}")
+        return None    except Exception as e:
         logger.error(f"Failed to initialize Phoenix tracing: {e}", exc_info=True)
         return None
 

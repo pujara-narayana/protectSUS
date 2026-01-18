@@ -29,13 +29,16 @@ celery_app.conf.update(
 )
 
 # Initialize Phoenix tracing for Celery worker
+print(f"[CELERY_APP] PHOENIX_ENABLED: {settings.PHOENIX_ENABLED}")
 try:
     if settings.PHOENIX_ENABLED:
         from app.core.tracing import setup_phoenix_tracing
         
         phoenix_url = settings.phoenix_url
+        print(f"[CELERY_APP] Phoenix URL: {phoenix_url}")
+        print(f"[CELERY_APP] PHOENIX_API_KEY present: {bool(settings.PHOENIX_API_KEY)}")
+        print(f"[CELERY_APP] Initializing Phoenix tracing for Celery worker...")
         
-        logger.info("Initializing Phoenix tracing for Celery worker...")
         tracer = setup_phoenix_tracing(
             project_name="protectsus-celery-worker",
             enabled=settings.PHOENIX_ENABLED,
@@ -45,8 +48,12 @@ try:
         )
         
         if tracer:
-            logger.info(f"✓ Phoenix tracing initialized for Celery worker at {phoenix_url}")
+            print(f"[CELERY_APP] ✓ Phoenix tracing initialized at {phoenix_url}")
         else:
-            logger.warning("Phoenix tracing initialization returned None")
+            print("[CELERY_APP] ⚠ Phoenix tracing initialization returned None")
+    else:
+        print("[CELERY_APP] Phoenix tracing is disabled")
 except Exception as e:
-    logger.error(f"Failed to initialize Phoenix tracing in Celery worker: {e}")
+    print(f"[CELERY_APP] ❌ Failed to initialize Phoenix: {e}")
+    import traceback
+    traceback.print_exc()
