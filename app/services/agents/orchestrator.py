@@ -33,10 +33,9 @@ class AgentOrchestrator:
         Initialize orchestrator with optional user LLM settings.
         
         Args:
-            user_settings: Optional dict with 'llm_provider' and 'api_key' keys
+            user_settings: Optional dict with 'llm_provider' key
         """
         llm_provider = user_settings.get('llm_provider') if user_settings else None
-        custom_api_key = user_settings.get('api_key') if user_settings else None
         
         self.vulnerability_agent = VulnerabilityAgent(llm_provider=llm_provider)
         self.dependency_agent = DependencyAgent(llm_provider=llm_provider)

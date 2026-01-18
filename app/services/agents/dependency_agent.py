@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class DependencyAgent(BaseAgent):
     """Agent for assessing dependency security risks"""
 
-    def __init__(self, llm_provider: str = None, custom_api_key: str = None):
+    def __init__(self, llm_provider: str = None):
         super().__init__("DependencyAgent", llm_provider=llm_provider)
 
     async def analyze(self, code: str, context: Dict[str, Any]) -> Dict[str, Any]:
@@ -36,53 +36,92 @@ class DependencyAgent(BaseAgent):
                 'findings_count': 0
             }
 
-        system_prompt = """You are an expert in software supply chain security, dependency management, and build systems.
+        system_prompt = """You are a world-class DevOps engineer, security expert, and dependency management specialist with deep knowledge of package ecosystems (npm, pip, Maven, Cargo, Go modules, etc.).
 
-Your task is to analyze the provided dependency files for security risks AND potential build/runtime issues.
+Your mission is to perform an EXHAUSTIVE analysis of dependency files to find ALL issues that could:
+- Prevent the project from building or installing
+- Cause runtime failures
+- Introduce security vulnerabilities
+- Create compatibility problems
 
-**DEPENDENCY SECURITY RISKS:**
-1. Known vulnerabilities (CVEs) in dependencies
-2. Outdated packages with available security updates
-3. Deprecated or unmaintained packages
-4. Supply chain risks (typosquatting, malicious packages)
-5. License compliance issues
-6. Transitive dependency risks
+## CATEGORY 1: BUILD-BREAKING ISSUES (CRITICAL - Check First!)
+- Invalid package names (typos, non-existent packages)
+- Invalid version specifiers (malformed semver, impossible ranges)
+- Conflicting version requirements between packages
+- Missing required dependencies
+- Circular dependencies
+- Packages removed from registry (yanked/unpublished)
+- Platform-incompatible packages
+- Invalid dependency file syntax (JSON errors, YAML errors)
+- Missing peer dependencies
+- Engine/runtime version incompatibilities (Node version, Python version, etc.)
 
-**BUILD & COMPATIBILITY ISSUES:**
-7. Version conflicts between dependencies
-8. Missing required dependencies
-9. Incompatible package versions (breaking changes)
-10. Platform-specific dependencies that may fail
-11. Dependency resolution conflicts
-12. Deprecated package versions that may cause build failures
-13. Peer dependency mismatches
+## CATEGORY 2: SECURITY VULNERABILITIES (HIGH Priority)
+- Known CVEs in direct dependencies
+- Known CVEs in transitive dependencies  
+- Packages with known malware/backdoors
+- Typosquatting packages (similar names to popular packages)
+- Unmaintained packages (no updates in 2+ years)
+- Packages with compromised maintainer accounts
+- Packages pulled from registries for security reasons
+- Overly permissive version ranges allowing vulnerable versions
 
-**PRIORITY:** Flag CRITICAL issues that will prevent build or cause immediate runtime failures.
+## CATEGORY 3: COMPATIBILITY ISSUES (HIGH Priority)
+- Major version bumps with breaking changes
+- Deprecated packages scheduled for removal
+- Packages incompatible with specified runtime version
+- Native dependencies that may fail on certain platforms
+- Dependencies requiring specific system libraries
+- Version pinning issues (too strict or too loose)
 
-For each risky dependency found, provide output in this format:
+## CATEGORY 4: MAINTENANCE RISKS (MEDIUM Priority)
+- Severely outdated packages (3+ major versions behind)
+- Packages with security issues in dependencies
+- Packages with declining community support
+- License compatibility issues
+- Packages with known bugs in current version
 
-PACKAGE: [package name]
-VERSION: [current version]
-LATEST: [latest version]
+## OUTPUT FORMAT (STRICT - Follow Exactly):
+For EACH issue found, output:
+
+PACKAGE: [exact package name]
+VERSION: [current version or version range specified]
+LATEST: [latest stable version available]
 RISK_LEVEL: [critical|high|medium|low]
-VULNERABILITIES: [comma-separated CVE IDs or vulnerability descriptions]
+CATEGORY: [BUILD_BREAKING|SECURITY|COMPATIBILITY|MAINTENANCE]
+VULNERABILITIES: [CVE IDs or vulnerability descriptions, comma-separated]
 OUTDATED: [yes|no]
-BUILD_IMPACT: [will this cause build failures or runtime errors?]
-RECOMMENDATION: [what action to take with specific version if applicable]
+BUILD_IMPACT: [Exactly what will break and why]
+RECOMMENDATION: [Specific action: update to version X.Y.Z, replace with alternative, remove, etc.]
 
-Be specific and actionable. Prioritize issues that will break the build or cause runtime failures."""
+## RULES:
+1. Check EVERY dependency listed, not just the first few
+2. Flag build-breaking issues first (CRITICAL severity)
+3. Include transitive dependency risks when relevant
+4. Provide specific version numbers in recommendations
+5. If a package should be replaced, suggest alternatives
+6. Check for typosquatting on common package names"""
 
-        user_prompt = f"""Analyze these dependency files for security risks AND build/compatibility issues:
+        user_prompt = f"""Perform a COMPREHENSIVE dependency audit on these files. Find ALL issues - build breakers, security vulnerabilities, and compatibility problems.
 
+## DEPENDENCY FILES TO ANALYZE:
 {dependencies}
 
-**IMPORTANT:**
-1. Check for version conflicts and incompatibilities first
-2. Identify deprecated packages that may break builds
-3. Look for missing peer dependencies
-4. Then assess security vulnerabilities
+## YOUR TASK:
+1. FIRST: Check for invalid syntax in dependency files (JSON errors, etc.)
+2. SECOND: Look for non-existent or typosquatted package names
+3. THIRD: Identify version conflicts and incompatibilities
+4. FOURTH: Check for known security vulnerabilities (CVEs)
+5. FIFTH: Flag severely outdated or unmaintained packages
 
-Provide detailed risk assessment following the specified format, prioritizing issues that will break builds or cause runtime failures."""
+## IMPORTANT:
+- Check EVERY package listed, not just a sample
+- Report ALL issues you find, prioritized by severity
+- Be specific about version numbers
+- Provide actionable recommendations with exact versions to upgrade to
+- If no issues found, explicitly state "NO DEPENDENCY ISSUES FOUND"
+
+Output your findings in the specified format. Start with CRITICAL/BUILD-BREAKING issues, then SECURITY issues, then others."""
 
         try:
             # Call LLM API
