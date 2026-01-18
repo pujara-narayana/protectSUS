@@ -116,16 +116,24 @@ async def _run_analysis_async(
             }
         )
 
-        # Step 5: Post analysis summary to PR if this was triggered by a PR
+        # Step 5: Post analysis summary to PR or commit
+        summary_comment = fix_service.generate_summary(
+            analysis_result['vulnerabilities'],
+            analysis_result['dependency_risks']
+        )
+        
         if pr_number:
             logger.info(f"Step 5: Posting analysis results to PR #{pr_number}")
-            summary_comment = fix_service.generate_summary(
-                analysis_result['vulnerabilities'],
-                analysis_result['dependency_risks']
-            )
             await github_service.add_pr_comment(
                 repo_full_name=repo_full_name,
                 pr_number=pr_number,
+                comment=summary_comment
+            )
+        else:
+            logger.info(f"Step 5: Posting analysis results to commit {commit_sha[:7]}")
+            await github_service.add_commit_comment(
+                repo_full_name=repo_full_name,
+                commit_sha=commit_sha,
                 comment=summary_comment
             )
 
@@ -147,10 +155,8 @@ async def _run_analysis_async(
                     repo_full_name=repo_full_name,
                     base_commit=commit_sha,
                     fixes=fixes,
-                    analysis_summary=fix_service.generate_summary(
-                        analysis_result['vulnerabilities'],
-                        analysis_result['dependency_risks']
-                    )
+                    analysis_summary=summary_comment,
+                    source_pr_number=pr_number
                 )
         else:
             logger.info("No vulnerabilities found, skipping fix generation")
