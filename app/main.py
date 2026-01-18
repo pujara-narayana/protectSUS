@@ -31,15 +31,12 @@ async def lifespan(app: FastAPI):
             project_name="protectsus-agents",
             enabled=settings.PHOENIX_ENABLED,
             api_key=settings.PHOENIX_API_KEY,
-            collector_endpoint=settings.PHOENIX_COLLECTOR_ENDPOINT
+            base_url=settings.PHOENIX_BASE_URL,
+            client_headers=settings.PHOENIX_CLIENT_HEADERS
         )
 
         if tracer:
-            phoenix_url = get_phoenix_url(
-                host=settings.PHOENIX_HOST,
-                port=settings.PHOENIX_PORT,
-                collector_endpoint=settings.PHOENIX_COLLECTOR_ENDPOINT
-            )
+            phoenix_url = get_phoenix_url(base_url=settings.PHOENIX_BASE_URL)
             logger.info(f"Phoenix UI available at: {phoenix_url}")
 
     # Connect databases

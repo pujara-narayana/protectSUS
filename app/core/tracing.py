@@ -11,7 +11,8 @@ def setup_phoenix_tracing(
     project_name: str = "protectsus-agents",
     enabled: bool = True,
     api_key: Optional[str] = None,
-    collector_endpoint: Optional[str] = None
+    base_url: Optional[str] = None,
+    client_headers: Optional[str] = None
 ) -> Optional[object]:
     """
     Configure Arize Phoenix tracing for LLM observability
@@ -19,13 +20,15 @@ def setup_phoenix_tracing(
     This sets up automatic instrumentation for:
     - OpenAI SDK calls (chat completions, embeddings)
     - Anthropic SDK calls (messages)
+    - LangChain/LangGraph workflows
     - Custom spans for agent workflows
 
     Args:
         project_name: Name of the project in Phoenix (default: "protectsus-agents")
         enabled: Whether to enable tracing (default: True)
         api_key: Phoenix API key for cloud (reads from env if not provided)
-        collector_endpoint: Phoenix collector endpoint URL (reads from env if not provided)
+        base_url: Phoenix base URL (reads from env if not provided)
+        client_headers: Custom headers for authentication (reads from env if not provided)
 
     Returns:
         TracerProvider object if successful, None if disabled or failed
@@ -33,15 +36,15 @@ def setup_phoenix_tracing(
     Environment Variables:
         PHOENIX_ENABLED: Enable/disable tracing (default: True)
         PHOENIX_API_KEY: API key for Phoenix cloud
-        PHOENIX_COLLECTOR_ENDPOINT: Collector endpoint URL
-        PHOENIX_HOST: Local Phoenix host (default: localhost)
-        PHOENIX_PORT: Local Phoenix port (default: 6006)
+        PHOENIX_BASE_URL: Base URL (e.g., https://app.phoenix.arize.com/s/your-space)
+        PHOENIX_CLIENT_HEADERS: Custom headers (e.g., "Authorization=Bearer token")
 
     References:
         - Phoenix Docs: https://arize.com/docs/phoenix
         - Tracing Guide: https://arize.com/docs/phoenix/get-started/get-started-tracing
         - OpenAI Integration: https://arize.com/docs/phoenix/tracing/integrations-tracing/openai
         - Anthropic Integration: https://arize.com/docs/phoenix/tracing/integrations-tracing/anthropic
+        - LangChain Integration: https://arize.com/docs/phoenix/tracing/integrations-tracing/langchain
     """
 
     if not enabled:
@@ -49,34 +52,37 @@ def setup_phoenix_tracing(
         return None
 
     try:
-        # Set environment variables for Phoenix cloud if provided
+        # Set environment variables for Phoenix
         if api_key:
             os.environ["PHOENIX_API_KEY"] = api_key
-        elif "PHOENIX_API_KEY" in os.environ:
-            api_key = os.environ["PHOENIX_API_KEY"]
+            logger.debug(f"Set PHOENIX_API_KEY")
 
-        if collector_endpoint:
-            os.environ["PHOENIX_COLLECTOR_ENDPOINT"] = collector_endpoint
-        elif "PHOENIX_COLLECTOR_ENDPOINT" in os.environ:
-            collector_endpoint = os.environ["PHOENIX_COLLECTOR_ENDPOINT"]
+        if base_url:
+            os.environ["PHOENIX_BASE_URL"] = base_url
+            logger.debug(f"Set PHOENIX_BASE_URL: {base_url}")
+
+        if client_headers:
+            os.environ["PHOENIX_CLIENT_HEADERS"] = client_headers
+            logger.debug(f"Set PHOENIX_CLIENT_HEADERS")
 
         # Import Phoenix OTEL register
         from phoenix.otel import register
 
         # Configure the Phoenix tracer with auto-instrumentation
+        logger.info("Registering Phoenix tracer with auto-instrumentation...")
         tracer_provider = register(
             project_name=project_name,
-            auto_instrument=True  # Auto-instrument based on installed packages
+            auto_instrument=True  # Auto-instrument OpenAI, Anthropic, LangChain
         )
 
-        endpoint_info = collector_endpoint or f"http://{os.getenv('PHOENIX_HOST', 'localhost')}:{os.getenv('PHOENIX_PORT', '6006')}"
+        endpoint_info = base_url or "http://localhost:6006"
 
         logger.info(
             f"✓ Phoenix tracing initialized successfully\n"
             f"  Project: {project_name}\n"
             f"  Endpoint: {endpoint_info}\n"
             f"  Auto-instrumentation: Enabled\n"
-            f"  Supported SDKs: OpenAI, Anthropic"
+            f"  Supported SDKs: OpenAI, Anthropic, LangChain/LangGraph"
         )
 
         return tracer_provider
@@ -84,9 +90,11 @@ def setup_phoenix_tracing(
     except ImportError as e:
         logger.warning(
             f"Phoenix tracing packages not installed: {e}\n"
-            f"Install with: pip install arize-phoenix-otel "
-            f"openinference-instrumentation-openai "
-            f"openinference-instrumentation-anthropic"
+            f"Install with:\n"
+            f"  pip install arize-phoenix-otel\n"
+            f"  pip install openinference-instrumentation-openai\n"
+            f"  pip install openinference-instrumentation-anthropic\n"
+            f"  pip install openinference-instrumentation-langchain"
         )
         return None
 
@@ -95,29 +103,20 @@ def setup_phoenix_tracing(
         return None
 
 
-def get_phoenix_url(
-    host: str = "localhost",
-    port: int = 6006,
-    collector_endpoint: Optional[str] = None
-) -> str:
+def get_phoenix_url(base_url: Optional[str] = None) -> str:
     """
     Get the Phoenix UI URL for viewing traces
 
     Args:
-        host: Phoenix host (default: localhost)
-        port: Phoenix port (default: 6006)
-        collector_endpoint: Cloud endpoint (overrides host/port)
+        base_url: Phoenix base URL (e.g., https://app.phoenix.arize.com/s/your-space)
 
     Returns:
         URL to Phoenix UI
     """
-    if collector_endpoint:
-        # Extract base URL from collector endpoint
-        # e.g., https://app.phoenix.arize.com/s/your-space/v1/traces -> https://app.phoenix.arize.com/s/your-space
-        base_url = "/".join(collector_endpoint.split("/")[:5])
+    if base_url:
         return base_url
 
-    return f"http://{host}:{port}"
+    return "http://localhost:6006"
 
 
 def create_custom_span(name: str, attributes: dict = None):

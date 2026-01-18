@@ -59,12 +59,11 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
 
-    # Arize Phoenix
+    # Arize Phoenix Tracing
     PHOENIX_ENABLED: bool = True
-    PHOENIX_HOST: str = "localhost"
-    PHOENIX_PORT: int = 6006
+    PHOENIX_BASE_URL: Optional[str] = None  # e.g., https://app.phoenix.arize.com/s/your-space
     PHOENIX_API_KEY: Optional[str] = None
-    PHOENIX_COLLECTOR_ENDPOINT: Optional[str] = None
+    PHOENIX_CLIENT_HEADERS: Optional[str] = None
 
     class Config:
         env_file = ".env"
