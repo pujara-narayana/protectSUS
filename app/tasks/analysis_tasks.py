@@ -26,7 +26,8 @@ def run_security_analysis(
     repo_full_name: str,
     commit_sha: str,
     clone_url: str,
-    pr_number: Optional[int] = None
+    pr_number: Optional[int] = None,
+    user_settings: Optional[dict] = None
 ):
     """
     Run complete security analysis pipeline
@@ -37,18 +38,32 @@ def run_security_analysis(
     3. Multi-agent analysis
     4. Fix generation
     5. PR creation
+    
+    If user_settings is provided, the user's custom LLM API key
+    and provider preference will be used for the analysis.
     """
     logger.info(f"Starting analysis task for {analysis_id}")
+    if user_settings:
+        logger.info(f"Using custom LLM settings: provider={user_settings.get('llm_provider')}")
 
-    # Run async code in event loop
-    loop = asyncio.get_event_loop()
+    # Run async code in event loop - create new loop if needed
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    
     return loop.run_until_complete(
         _run_analysis_async(
             analysis_id,
             repo_full_name,
             commit_sha,
             clone_url,
-            pr_number
+            pr_number,
+            user_settings
         )
     )
 
@@ -58,12 +73,13 @@ async def _run_analysis_async(
     repo_full_name: str,
     commit_sha: str,
     clone_url: str,
-    pr_number: Optional[int]
+    pr_number: Optional[int],
+    user_settings: Optional[dict] = None
 ):
     """Async implementation of analysis task"""
     github_service = GitHubService()
     compression_service = CompressionService()
-    orchestrator = AgentOrchestrator()
+    orchestrator = AgentOrchestrator(user_settings=user_settings)
     fix_service = FixService()
 
     repo_path = None
