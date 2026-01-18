@@ -18,11 +18,11 @@ import {
   LogOut,
   ChevronLeft,
   Search,
-  Loader2,
   GitCommit,
 } from "lucide-react";
 import { getRepos, getCommits } from "@/lib/github";
 import LandingPage from "@/features/landing/LandingPage";
+import TerminalSpinner from "@/features/landing/TerminalSpinner";
 import CommitSelection from "@/features/repo-explorer/CommitSelector";
 import { Dashboard } from "@/features/dashboard/DashboardView";
 
@@ -88,11 +88,7 @@ export default function Page() {
 
   // Render loading state
   if (status === "loading") {
-    return (
-      <div className="flex items-center justify-center min-h-screen bg-zinc-950">
-        <Loader2 className="animate-spin h-12 w-12 text-white" />
-      </div>
-    );
+    return <TerminalSpinner />;
   }
 
   // Render views based on state

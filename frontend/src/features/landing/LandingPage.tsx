@@ -8,10 +8,61 @@ import {
   Code,
 } from "lucide-react";
 
+const scrollToSection = (sectionId: string) => {
+  const element = document.getElementById(sectionId);
+  if (element) {
+    element.scrollIntoView({ behavior: 'smooth' });
+  }
+};
+
+const Header = () => (
+  <header className="fixed top-0 left-0 right-0 z-50 bg-zinc-950/80 backdrop-blur-sm border-b border-zinc-800">
+    <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+      <div className="flex items-center justify-between h-16">
+        <button
+          onClick={() => scrollToSection('hero')}
+          className="text-xl font-bold text-white hover:text-blue-400 transition-colors"
+        >
+          ProtectSUS
+        </button>
+        <nav className="flex items-center gap-8">
+          <button
+            onClick={() => scrollToSection('features')}
+            className="text-zinc-300 hover:text-white transition-colors"
+          >
+            Features
+          </button>
+          <button
+            onClick={() => scrollToSection('demo')}
+            className="text-zinc-300 hover:text-white transition-colors"
+          >
+            Demo
+          </button>
+          <button
+            onClick={() => scrollToSection('pricing')}
+            className="text-zinc-300 hover:text-white transition-colors"
+          >
+            Pricing
+          </button>
+          <a
+            href="https://devpost.com/software/protectsus" // Replace with your actual Devpost URL
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-zinc-300 hover:text-white transition-colors"
+          >
+            Devpost
+          </a>
+        </nav>
+      </div>
+    </div>
+  </header>
+);
+
 const LandingPage = ({ onSignIn }: { onSignIn: () => void }) => (
-  <div className="min-h-screen bg-zinc-950">
-    <div className="relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-mesh opacity-50"></div>
+    <div className="min-h-screen bg-zinc-950">
+      <Header />
+      <div id="hero" className="relative overflow-hidden pt-16">
+      <div className="absolute inset-0 bg-gradient-mesh opacity-90 blur-3xl"></div>
       <div className="relative max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-24 sm:py-32">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
@@ -61,7 +112,7 @@ const LandingPage = ({ onSignIn }: { onSignIn: () => void }) => (
         </div>
       </div>
     </div>
-    <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-24">
+    <div id="features" className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-16">
       <div className="grid md:grid-cols-3 gap-8">
         <FeatureCard
           icon={<Users className="w-6 h-6 text-blue-400" />}
@@ -78,6 +129,62 @@ const LandingPage = ({ onSignIn }: { onSignIn: () => void }) => (
           title="Instant IDE Feedback"
           description="Integrates directly into your workflow for continuous security."
         />
+      </div>
+    </div>
+    <div id="demo" className="relative py-8 sm:py-16">
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-600/10 to-indigo-600/10 blur-3xl"></div>
+      <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12">
+        <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4 aspect-video flex items-center justify-center">
+          <p className="text-zinc-500">[Demo Video Placeholder]</p>
+        </div>
+      </div>
+    </div>
+    <div id="pricing" className="py-8 sm:py-16">
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold text-white mb-4">Pricing</h2>
+          <p className="text-xl text-zinc-400">Choose the plan that fits your needs</p>
+        </div>
+        <div className="grid md:grid-cols-3 gap-8">
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-8 hover:border-zinc-700 transition-colors">
+            <h3 className="text-2xl font-bold text-white mb-4">Free</h3>
+            <div className="text-3xl font-bold text-blue-400 mb-6">$0</div>
+            <ul className="space-y-3 text-zinc-300 mb-8">
+              <li>• 5 audits per month</li>
+              <li>• Basic vulnerability detection</li>
+              <li>• Community support</li>
+            </ul>
+            <button className="w-full px-6 py-3 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition-colors">
+              Get Started
+            </button>
+          </div>
+          <div className="bg-gradient-to-br from-blue-600/10 to-indigo-600/10 border-2 border-blue-600 rounded-xl p-8">
+            <h3 className="text-2xl font-bold text-white mb-4">Pro</h3>
+            <div className="text-3xl font-bold text-blue-400 mb-6">$49/mo</div>
+            <ul className="space-y-3 text-zinc-300 mb-8">
+              <li>• Unlimited audits</li>
+              <li>• Advanced AI agents</li>
+              <li>• Priority support</li>
+              <li>• Market-weighted risk scores</li>
+            </ul>
+            <button className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-500 hover:to-indigo-500 transition-all duration-200">
+              Start Free Trial
+            </button>
+          </div>
+          <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-8 hover:border-zinc-700 transition-colors">
+            <h3 className="text-2xl font-bold text-white mb-4">Enterprise</h3>
+            <div className="text-3xl font-bold text-blue-400 mb-6">Custom</div>
+            <ul className="space-y-3 text-zinc-300 mb-8">
+              <li>• Custom integrations</li>
+              <li>• Private deployment</li>
+              <li>• Dedicated support</li>
+              <li>• Custom AI models</li>
+            </ul>
+            <button className="w-full px-6 py-3 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition-colors">
+              Contact Sales
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>
