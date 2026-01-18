@@ -41,15 +41,11 @@ requests==2.31.0
 tree-sitter==0.20.4
 libcst==1.1.0
 
-# Observability - Arize Phoenix Tracing (compatible versions for Python 3.11)
-arize-phoenix==4.0.0
-arize-phoenix-otel==0.6.1
-opentelemetry-api==1.22.0
-opentelemetry-sdk==1.22.0
-opentelemetry-instrumentation==0.43b0
-openinference-instrumentation-openai==0.1.14
-openinference-instrumentation-anthropic==0.1.14
-openinference-instrumentation-langchain==0.1.58
+# Observability - Arize Phoenix Tracing (latest stable versions)
+arize-phoenix>=12.0.0
+openinference-instrumentation-openai
+openinference-instrumentation-anthropic
+openinference-instrumentation-langchain
 
 # Utilities
 python-dotenv==1.0.0

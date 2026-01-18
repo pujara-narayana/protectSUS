@@ -73,14 +73,11 @@ def setup_phoenix_tracing(
         from phoenix.otel import register
         
         # Register tracer with auto-instrumentation
-        # This will automatically instrument:
-        # - openai (if openinference-instrumentation-openai is installed)
-        # - anthropic (if openinference-instrumentation-anthropic is installed)
-        # - langchain (if openinference-instrumentation-langchain is installed)
+        # Phoenix 12.x+ automatically instruments installed libraries
+        # via the auto_instrument parameter
         _tracer_provider = register(
             project_name=project_name,
-            endpoint=clean_url,
-            auto_instrument=True,  # Enable auto-instrumentation for all supported libraries
+            auto_instrument=True  # Auto-instrument OpenAI, Anthropic, LangChain
         )
 
         print(f"[PHOENIX] ✓ Tracing initialized!")
