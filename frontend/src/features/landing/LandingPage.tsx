@@ -187,19 +187,29 @@ const LandingPage = ({ onSignIn }: { onSignIn: () => void }) => {
           </div>
 
           {/* Bottom Right */}
-          <div className="absolute bottom-12 right-12 text-right">
+          <div className="absolute bottom-12 right-12 text-right flex flex-col gap-3">
             <p className="text-lg text-zinc-400 mb-6 max-w-xs">
               ProtectSUS uses multi-agent debate to catch vulnerabilities before
               they deploy.
             </p>
             <button
               onClick={onSignIn}
-              className="group inline-flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-500 transition-colors"
+              className="group inline-flex items-center gap-2 px-6 py-3 bg-indigo-700 text-white font-semibold rounded-lg hover:bg-indigo-500 transition-colors"
             >
               <Github className="w-5 h-5" />
               Connect with GitHub to Start Audit
               <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </button>
+            <a
+              href="https://github.com/apps/protectsus"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group inline-flex items-center gap-2 px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-indigo-500 transition-colors"
+            >
+              <Github className="w-5 h-5" />
+              Install GitHub App
+              <ChevronRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            </a>
           </div>
         </div>
       </div>
