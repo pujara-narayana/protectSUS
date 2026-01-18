@@ -32,6 +32,7 @@ export const Dashboard = ({
   const [tree, setTree] = useState<any[]>([]);
   const [selectedFile, setSelectedFile] = useState<any>(null);
   const [fileContent, setFileContent] = useState<string>("");
+  const [activeTab, setActiveTab] = useState<"files" | "code" | "debate">("files");
 
   useEffect(() => {
     if (session && repo && commit) {
@@ -46,6 +47,7 @@ export const Dashboard = ({
 
   const handleFileClick = (file: any) => {
     setSelectedFile(file);
+    setActiveTab("code"); // Switch to code view on mobile
     getFileContent(
       session?.accessToken as string,
       repo.owner.login,
@@ -60,7 +62,7 @@ export const Dashboard = ({
     <div className="min-h-screen bg-[#0a0a0a]">
       {/* Header */}
       <div className="border-b border-zinc-800 bg-zinc-900/50 backdrop-blur-sm sticky top-0 z-10">
-        <div className="max-w-[1800px] mx-auto px-8 py-4">
+        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 md:px-8 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <button
@@ -71,10 +73,10 @@ export const Dashboard = ({
                 <span className="text-sm">Back</span>
               </button>
               <div className="border-l border-zinc-700 pl-4">
-                <h2 className="text-lg font-semibold text-white">
+                <h2 className="text-base sm:text-lg font-semibold text-white truncate max-w-xs sm:max-w-md">
                   Commit #{commit.sha.substring(0, 5)} {commit.commit.message}
                 </h2>
-                <p className="text-xs text-zinc-500 font-mono">{repo.name}</p>
+                <p className="text-xs text-zinc-500 font-mono truncate">{repo.name}</p>
               </div>
             </div>
             <button
@@ -87,60 +89,96 @@ export const Dashboard = ({
         </div>
       </div>
 
-      {/* Tab Navigation */}
-      <div className="max-w-[1800px] mx-auto px-8 pt-6">
-        <div className="w-full">
-          <VerdictCard />
+      {/* Verdict Card */}
+      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 md:px-8 pt-6">
+        <VerdictCard />
+      </div>
+
+      {/* Mobile Tab Navigation */}
+      <div className="md:hidden max-w-[1800px] mx-auto px-4 sm:px-6 pt-4">
+        <div className="flex gap-2">
+          <button
+            onClick={() => setActiveTab("files")}
+            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
+              activeTab === "files"
+                ? "bg-blue-600 text-white"
+                : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+            }`}
+          >
+            File Explorer
+          </button>
+          <button
+            onClick={() => setActiveTab("code")}
+            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
+              activeTab === "code"
+                ? "bg-blue-600 text-white"
+                : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+            }`}
+          >
+            Code View
+          </button>
+          <button
+            onClick={() => setActiveTab("debate")}
+            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
+              activeTab === "debate"
+                ? "bg-blue-600 text-white"
+                : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+            }`}
+          >
+            Agent Debate
+          </button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-[1800px] mx-auto px-8 py-6 w-full">
-        <div className="grid grid-cols-12 gap-4">
-          {/* Left Sidebar - File Tree - matches right column height */}
-          <div className="col-span-2 h-[calc(120vh-16rem)]">
-            <div className="bg-zinc-900/30 rounded-lg border border-zinc-800 p-4 h-full overflow-y-auto">
-              <FileTree tree={tree} onFileClick={handleFileClick} selectedFile={selectedFile} />
-            </div>
-          </div>
-
-          {/* Center - Code View - matches right column height */}
-          <div className="col-span-7 h-[calc(120vh-16rem)]">
-            <div className="bg-[#1a1a1a] rounded-lg border border-zinc-800 overflow-hidden h-full flex flex-col">
-              {/* Code Header */}
-              <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0">
-                <code className="text-xs text-zinc-400 font-mono">
-                  {selectedFile?.path || commit.commit.message || "main.py"}
-                </code>
-              </div>
-
-              {/* Code Content - scrollable */}
-              <div className="flex-1 overflow-y-auto p-4 font-mono text-xs">
-                <pre>{fileContent}</pre>
+      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 md:px-8 py-6 w-full">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+          {/* File Explorer (Mobile: conditional, Desktop: always visible) */}
+          <div className={`col-span-1 md:col-span-2 ${activeTab === "files" ? "block" : "hidden md:block"}`}>
+            <div className="md:h-[calc(120vh-16rem)] h-[60vh]">
+              <div className="bg-zinc-900/30 rounded-lg border border-zinc-800 p-4 h-full overflow-y-auto">
+                <FileTree tree={tree} onFileClick={handleFileClick} selectedFile={selectedFile} />
               </div>
             </div>
           </div>
 
-          {/* Right Sidebar - Vulnerabilities */}
-          <div className="col-span-3 h-[calc(120vh-16rem)] flex flex-col gap-3">
-            {/* Scrollable AI Agent Discussion */}
-            <div className="h-full bg-zinc-900/30 rounded-lg border border-zinc-800 overflow-hidden flex flex-col">
-              {/* Agent Chat Header */}
-              <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0">
-                <div className="flex items-center gap-2">
-                  <Bot className="w-4 h-4 text-zinc-400" />
-                  <h3 className="text-sm font-semibold text-zinc-300">
-                    Agent Debate
-                  </h3>
+          {/* Code View (Mobile: conditional, Desktop: always visible) */}
+          <div className={`col-span-1 md:col-span-7 ${activeTab === "code" ? "block" : "hidden md:block"}`}>
+            <div className="md:h-[calc(120vh-16rem)] h-[60vh]">
+              <div className="bg-[#1a1a1a] rounded-lg border border-zinc-800 overflow-hidden h-full flex flex-col">
+                {/* Code Header */}
+                <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0">
+                  <code className="text-xs text-zinc-400 font-mono truncate">
+                    {selectedFile?.path || commit.commit.message || "main.py"}
+                  </code>
+                </div>
+                {/* Code Content - scrollable */}
+                <div className="flex-1 overflow-y-auto p-4 font-mono text-xs">
+                  <pre>{fileContent}</pre>
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto p-3 space-y-3">
-                <VulnerabilityCard severity="safe" />
-                <VulnerabilityCard severity="critical" />
-                <VulnerabilityCard severity="safe" />
-                <VulnerabilityCard severity="critical" />
-                <VulnerabilityCard severity="safe" />
-                <VulnerabilityCard severity="critical" />
+            </div>
+          </div>
+
+          {/* Agent Debate (Mobile: conditional, Desktop: always visible) */}
+          <div className={`col-span-1 md:col-span-3 ${activeTab === "debate" ? "block" : "hidden md:block"}`}>
+            <div className="md:h-[calc(120vh-16rem)] h-[60vh]">
+              <div className="h-full bg-zinc-900/30 rounded-lg border border-zinc-800 overflow-hidden flex flex-col">
+                {/* Agent Chat Header */}
+                <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0">
+                  <div className="flex items-center gap-2">
+                    <Bot className="w-4 h-4 text-zinc-400" />
+                    <h3 className="text-sm font-semibold text-zinc-300">Agent Debate</h3>
+                  </div>
+                </div>
+                <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                  <VulnerabilityCard severity="safe" />
+                  <VulnerabilityCard severity="critical" />
+                  <VulnerabilityCard severity="safe" />
+                  <VulnerabilityCard severity="critical" />
+                  <VulnerabilityCard severity="safe" />
+                  <VulnerabilityCard severity="critical" />
+                </div>
               </div>
             </div>
           </div>
@@ -148,8 +186,8 @@ export const Dashboard = ({
       </div>
 
       {/* Metrics Cards */}
-      <div className="max-w-[1800px] mx-auto px-8 pb-6 w-full">
-        <div className="grid grid-cols-4 gap-4">
+      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 md:px-8 pb-6 w-full">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <MetricCard
             title="Overall Risk"
             value="88/100"
@@ -176,7 +214,6 @@ export const Dashboard = ({
           />
         </div>
       </div>
-      
     </div>
   );
 };
