@@ -15,6 +15,7 @@ import {
   Loader2,
   Clock,
 } from "lucide-react";
+import SettingsDropdown from "@/components/SettingsDropdown";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -305,12 +306,10 @@ export const Dashboard = ({
                 </p>
               </div>
             </div>
-            <button
-              onClick={onSignOut}
-              className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
+            <SettingsDropdown
+              userId={(session?.user as any)?.id || ""}
+              onSignOut={onSignOut}
+            />
           </div>
         </div>
       </div>
@@ -333,10 +332,10 @@ export const Dashboard = ({
           <button
             onClick={() => setActiveTab("files")}
             className={`py-2 px-6 rounded-lg font-medium text-sm transition-colors ${activeTab === "files" ||
-                activeTab === "code" ||
-                activeTab === "debate"
-                ? "bg-zinc-800 text-zinc-400"
-                : "bg-zinc-800 text-zinc-400"
+              activeTab === "code" ||
+              activeTab === "debate"
+              ? "bg-zinc-800 text-zinc-400"
+              : "bg-zinc-800 text-zinc-400"
               }`}
           >
             <Folder className="w-4 h-4 inline mr-2" />
@@ -351,8 +350,8 @@ export const Dashboard = ({
           <button
             onClick={() => setActiveTab("files")}
             className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${activeTab === "files"
-                ? "bg-blue-600 text-white"
-                : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+              ? "bg-blue-600 text-white"
+              : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
               }`}
           >
             File Explorer
@@ -360,8 +359,8 @@ export const Dashboard = ({
           <button
             onClick={() => setActiveTab("code")}
             className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${activeTab === "code"
-                ? "bg-blue-600 text-white"
-                : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+              ? "bg-blue-600 text-white"
+              : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
               }`}
           >
             Code View
@@ -369,8 +368,8 @@ export const Dashboard = ({
           <button
             onClick={() => setActiveTab("debate")}
             className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${activeTab === "debate"
-                ? "bg-blue-600 text-white"
-                : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+              ? "bg-blue-600 text-white"
+              : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
               }`}
           >
             Agent Debate
@@ -658,8 +657,8 @@ const FileTree = ({
             key={i}
             onClick={() => onFileClick(file)}
             className={`flex items-center gap-2 px-3 py-2 rounded cursor-pointer transition-colors group ${selectedFile?.path === file.path
-                ? "bg-blue-600/20"
-                : "hover:bg-zinc-800/50"
+              ? "bg-blue-600/20"
+              : "hover:bg-zinc-800/50"
               }`}
           >
             <File className="w-4 h-4 text-blue-500" />
@@ -799,8 +798,8 @@ const VerdictCard = ({
             onClick={onTriggerAudit}
             disabled={triggering}
             className={`py-2 px-4 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 shadow-lg whitespace-nowrap ${triggering
-                ? "bg-indigo-600 text-white cursor-wait"
-                : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white cursor-pointer"
+              ? "bg-indigo-600 text-white cursor-wait"
+              : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white cursor-pointer"
               }`}
           >
             {triggering ? (
