@@ -10,17 +10,16 @@ celery==5.3.4
 redis==5.0.1
 
 # AI/ML - LLM Providers
-# anthropic==0.17.0
+anthropic==0.17.0
 openai==1.12.0
 # google-generativeai==0.3.2
 
-# LangChain & LangGraph (compatible with Phoenix 12.x - requires langchain-core 0.2+)
+# LangChain & LangGraph (pinned versions to avoid backtracking)
 langchain
-# langchain-anthropic>=0.1.15
+langchain-anthropic==0.1.4
 langchain-community
 langchain-core
-langchain-openai
-langgraph
+langgraph==0.0.26
 
 # Machine Learning
 scikit-learn==1.2.2
@@ -43,7 +42,9 @@ tree-sitter==0.20.4
 libcst==1.1.0
 
 # Observability - Arize Phoenix Tracing (latest stable versions)
-arize-phoenix==12.30.0
+arize-phoenix>=12.0.0
+# openinference-instrumentation-openai
+# openinference-instrumentation-anthropic
 openinference-instrumentation-langchain
 
 # Utilities
