@@ -7,8 +7,10 @@ import hashlib
 import logging
 
 from app.core.config import settings
-from app.models.webhook import PushEvent, PullRequestEvent
+from app.models.webhook import PushEvent, PullRequestEvent, IssueCommentEvent
 from app.services.analysis_service import AnalysisService
+from app.services.command_parser import CommandParser
+from app.tasks.pr_workflow_tasks import handle_pr_approval, handle_pr_denial
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -114,6 +116,84 @@ async def github_webhook(
                 return {
                     "status": "ignored",
                     "message": f"PR action '{event.action}' not supported"
+                }
+
+        elif x_github_event == "issue_comment":
+            event = IssueCommentEvent(**data)
+
+            # Only process comments on PRs
+            if not event.is_pr_comment():
+                return {
+                    "status": "ignored",
+                    "message": "Comment not on a pull request"
+                }
+
+            # Only process comments on protectSUS PRs
+            if not event.is_protectsus_pr():
+                return {
+                    "status": "ignored",
+                    "message": "Comment not on a protectSUS PR"
+                }
+
+            # Only process comment creation (not edits or deletions)
+            if event.action != "created":
+                return {
+                    "status": "ignored",
+                    "message": f"Comment action '{event.action}' not supported"
+                }
+
+            # Get comment body and PR number
+            comment_body = event.get_comment_body()
+            pr_number = event.get_pr_number()
+            commenter = event.sender.get("login")
+
+            logger.info(
+                f"Processing comment on PR #{pr_number} by {commenter}: {comment_body[:50]}..."
+            )
+
+            # Parse command
+            command = CommandParser.parse_command(comment_body)
+
+            if not command:
+                # Not a valid command, ignore
+                return {
+                    "status": "ignored",
+                    "message": "Comment does not contain a valid protectSUS command"
+                }
+
+            # Queue background task based on command
+            if command["command"] == "approve":
+                logger.info(f"Queueing approval task for PR #{pr_number}")
+                handle_pr_approval.delay(
+                    repo_full_name=event.repository.full_name,
+                    pr_number=pr_number,
+                    commenter=commenter
+                )
+                return {
+                    "status": "accepted",
+                    "message": f"Approval command queued for PR #{pr_number}"
+                }
+
+            elif command["command"] == "deny":
+                feedback_text = command.get("feedback_text", "")
+                logger.info(
+                    f"Queueing denial task for PR #{pr_number} with feedback: {feedback_text[:50]}..."
+                )
+                handle_pr_denial.delay(
+                    repo_full_name=event.repository.full_name,
+                    pr_number=pr_number,
+                    feedback_text=feedback_text,
+                    commenter=commenter
+                )
+                return {
+                    "status": "accepted",
+                    "message": f"Denial command queued for PR #{pr_number}"
+                }
+
+            else:
+                return {
+                    "status": "ignored",
+                    "message": f"Unknown command: {command['command']}"
                 }
 
         else:

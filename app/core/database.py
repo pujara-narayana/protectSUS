@@ -111,11 +111,44 @@ class RedisDB:
         return cls.client
 
 
+async def create_mongodb_indexes():
+    """Create MongoDB indexes for optimal query performance"""
+    try:
+        db = MongoDB.get_database()
+
+        # Indexes for analyses collection
+        await db.analyses.create_index([("pr_number", 1), ("repo_full_name", 1)])
+        await db.analyses.create_index([("parent_analysis_id", 1)])
+        await db.analyses.create_index([("repo_full_name", 1), ("created_at", -1)])
+        await db.analyses.create_index([("commit_sha", 1)])
+        await db.analyses.create_index([("iteration_number", 1)])
+
+        # Indexes for fix_patterns collection (RAG)
+        await db.fix_patterns.create_index([("vulnerability_type", 1), ("file_extension", 1)])
+        await db.fix_patterns.create_index([("success_count", -1)])
+        await db.fix_patterns.create_index([("severity", 1)])
+        await db.fix_patterns.create_index([("repo_full_name", 1)])
+
+        # Indexes for user_feedback collection
+        await db.user_feedback.create_index([("analysis_id", 1)])
+        await db.user_feedback.create_index([("approved", 1)])
+        await db.user_feedback.create_index([("created_at", -1)])
+
+        logger.info("Successfully created MongoDB indexes")
+
+    except Exception as e:
+        logger.error(f"Error creating MongoDB indexes: {e}")
+        # Don't raise - indexes are optional for functionality
+
+
 async def connect_databases():
     """Connect to all databases"""
     await MongoDB.connect()
     await Neo4jDB.connect()
     await RedisDB.connect()
+
+    # Create indexes after connecting
+    await create_mongodb_indexes()
 
 
 async def disconnect_databases():

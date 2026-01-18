@@ -76,6 +76,40 @@ class Analysis(BaseModel):
     user_approved: Optional[bool] = None
     user_feedback: Optional[str] = None
 
+    # Iteration tracking for PR approval/denial workflow
+    parent_analysis_id: Optional[str] = Field(
+        None,
+        description="ID of parent analysis if this is a refinement iteration"
+    )
+    iteration_number: int = Field(
+        default=1,
+        description="Iteration number (1, 2, 3). 1 = initial, 2+ = refinements"
+    )
+    previous_pr_numbers: List[int] = Field(
+        default_factory=list,
+        description="PR numbers from previous iterations"
+    )
+    denial_reasons: List[str] = Field(
+        default_factory=list,
+        description="User feedback from PR denials"
+    )
+    rl_guidance_applied: bool = Field(
+        default=False,
+        description="Whether RL guidance was used in fix generation"
+    )
+    feedback_features: Optional[Dict[str, Any]] = Field(
+        None,
+        description="Extracted features from user feedback (LLM-based)"
+    )
+
+    # Additional PR workflow fields
+    approved_by: Optional[str] = Field(None, description="GitHub username who approved")
+    denied_by: Optional[str] = Field(None, description="GitHub username who denied")
+    approved_at: Optional[datetime] = Field(None, description="Timestamp of approval")
+    denied_at: Optional[datetime] = Field(None, description="Timestamp of denial")
+    merged: Optional[bool] = Field(None, description="Whether PR was merged")
+    merge_sha: Optional[str] = Field(None, description="SHA of merge commit")
+
     class Config:
         json_schema_extra = {
             "example": {
