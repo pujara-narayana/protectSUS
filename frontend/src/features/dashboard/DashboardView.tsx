@@ -15,7 +15,6 @@ import {
   Loader2,
   Clock,
 } from "lucide-react";
-import SettingsDropdown from "@/components/SettingsDropdown";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -306,10 +305,12 @@ export const Dashboard = ({
                 </p>
               </div>
             </div>
-            <SettingsDropdown
-              userId={(session?.user as any)?.id || ""}
-              onSignOut={onSignOut}
-            />
+            <button
+              onClick={onSignOut}
+              className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
           </div>
         </div>
       </div>

@@ -9,6 +9,7 @@ import {
   GitCommit,
 } from "lucide-react";
 import { getRepos, getCommits } from "@/lib/github";
+import SettingsDropdown from "@/components/SettingsDropdown";
 
 const CommitSelector = ({ onSelectCommit, onSignOut, session }: { onSelectCommit: (repo: any, commit: any) => void; onSignOut: () => void; session: any; }) => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -45,7 +46,7 @@ const CommitSelector = ({ onSelectCommit, onSignOut, session }: { onSelectCommit
     } else {
       setLoadingCommits(true);
       setOpenRepoId(repoId);
-      
+
       if (!commits[repoId] && session?.accessToken) {
         const repo = repos.find(r => r.id === repoId);
         if (repo) {
@@ -66,12 +67,12 @@ const CommitSelector = ({ onSelectCommit, onSignOut, session }: { onSelectCommit
       <div className="max-w-5xl mx-auto px-6 sm:px-8">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-8">
           <h1 className="text-2xl sm:text-3xl text-white">Select a Commit to Audit</h1>
-          <button onClick={onSignOut} className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors px-3 py-2 rounded-lg hover:bg-zinc-800/50">
-            <LogOut className="w-4 h-4" />
-            Logout
-          </button>
+          <SettingsDropdown
+            userId={(session?.user as any)?.id || ""}
+            onSignOut={onSignOut}
+          />
         </div>
-        
+
         <div className="relative mb-6">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 w-5 h-5" />
           <input
@@ -116,13 +117,13 @@ const CommitSelector = ({ onSelectCommit, onSignOut, session }: { onSelectCommit
                         {(commits[repo.id] || []).slice(0, 10).map(commit => (
                           <li key={commit.sha} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 py-2">
                             <div className="flex-1 min-w-0">
-                               <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-3">
                                 <GitCommit className="w-4 h-4 text-zinc-500 flex-shrink-0" />
                                 <code className="font-mono text-sm text-blue-400">{commit.sha.substring(0, 7)}</code>
-                               </div>
-                               <p className="text-zinc-300 mt-1 ml-7 text-sm line-clamp-2 break-words">{commit.commit.message}</p>
+                              </div>
+                              <p className="text-zinc-300 mt-1 ml-7 text-sm line-clamp-2 break-words">{commit.commit.message}</p>
                             </div>
-                             <button
+                            <button
                               onClick={() => onSelectCommit(repo, commit)}
                               className="px-4 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-lg hover:from-blue-500 hover:to-indigo-500 transition-all duration-200 text-xs sm:text-sm whitespace-nowrap"
                             >
