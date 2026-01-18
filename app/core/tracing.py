@@ -30,69 +30,32 @@ def setup_phoenix_tracing(
 
     try:
         print(f"[PHOENIX] Setting up tracing...")
-        print(f"[PHOENIX] API Key present: {bool(api_key)}")
-        print(f"[PHOENIX] Base URL: {base_url}")
         
         # Clean up values (remove quotes if present)
         clean_api_key = api_key.strip("'\"") if api_key else None
         clean_url = base_url.strip("'\"") if base_url else None
         
-        # Build headers for authentication - Phoenix uses 'api_key' header
-        headers = {}
+        # Set environment variables (Phoenix picks these up automatically)
         if clean_api_key:
-            headers["api_key"] = clean_api_key
-            print(f"[PHOENIX] Added api_key header")
+            os.environ["PHOENIX_API_KEY"] = clean_api_key
+            print(f"[PHOENIX] Set PHOENIX_API_KEY")
         
-        # Import Phoenix OTEL register
-        from phoenix.otel import register
-        print("[PHOENIX] Imported phoenix.otel.register")
-
-        # Configure the Phoenix tracer with endpoint passed directly
-        print(f"[PHOENIX] Registering tracer for project: {project_name}")
-        print(f"[PHOENIX] Using endpoint: {clean_url}")
-        print(f"[PHOENIX] Headers keys: {list(headers.keys())}")
-        
-        register_kwargs = {
-            "project_name": project_name,
-        }
-        
-        # Pass endpoint if provided
         if clean_url:
-            register_kwargs["endpoint"] = clean_url
+            os.environ["PHOENIX_COLLECTOR_ENDPOINT"] = clean_url
+            print(f"[PHOENIX] Set PHOENIX_COLLECTOR_ENDPOINT: {clean_url}")
         
-        # Pass headers if we have authentication
-        if headers:
-            register_kwargs["headers"] = headers
+        # Import and register - simple as per docs
+        from phoenix.otel import register
         
-        print(f"[PHOENIX] Register kwargs: {list(register_kwargs.keys())}")
-        tracer_provider = register(**register_kwargs)
-        print("[PHOENIX] Tracer registered")
+        tracer_provider = register(
+            project_name=project_name,
+            endpoint=clean_url,
+            auto_instrument=True
+        )
 
-        # Manually instrument LLM providers
-        try:
-            from openinference.instrumentation.openai import OpenAIInstrumentor
-            OpenAIInstrumentor().instrument(tracer_provider=tracer_provider)
-            print("[PHOENIX] ✓ OpenAI instrumented")
-        except Exception as e:
-            print(f"[PHOENIX] OpenAI instrumentation skipped: {e}")
-
-        try:
-            from openinference.instrumentation.anthropic import AnthropicInstrumentor
-            AnthropicInstrumentor().instrument(tracer_provider=tracer_provider)
-            print("[PHOENIX] ✓ Anthropic instrumented")
-        except Exception as e:
-            print(f"[PHOENIX] Anthropic instrumentation skipped: {e}")
-
-        try:
-            from openinference.instrumentation.langchain import LangChainInstrumentor
-            LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
-            print("[PHOENIX] ✓ LangChain instrumented")
-        except Exception as e:
-            print(f"[PHOENIX] LangChain instrumentation skipped: {e}")
-
-        print(f"[PHOENIX] ✓ Tracing initialized successfully!")
+        print(f"[PHOENIX] ✓ Tracing initialized!")
         print(f"[PHOENIX]   Project: {project_name}")
-        print(f"[PHOENIX]   Endpoint: {base_url}")
+        print(f"[PHOENIX]   Endpoint: {clean_url}")
         
         logger.info(f"✓ Phoenix tracing initialized for {project_name}")
 
