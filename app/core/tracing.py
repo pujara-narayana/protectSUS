@@ -76,8 +76,6 @@ def setup_phoenix_tracing(
         import traceback
         traceback.print_exc()
         logger.error(f"Failed to initialize Phoenix tracing: {e}")
-        return None    except Exception as e:
-        logger.error(f"Failed to initialize Phoenix tracing: {e}", exc_info=True)
         return None
 
 
