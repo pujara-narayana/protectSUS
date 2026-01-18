@@ -18,7 +18,7 @@ google-generativeai==0.3.2
 langchain==0.1.6
 langchain-anthropic==0.1.4
 langchain-community==0.0.20
-langchain-core==0.1.23
+langchain-core==0.1.27
 langgraph==0.0.26
 
 # Machine Learning
