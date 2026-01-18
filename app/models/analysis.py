@@ -65,6 +65,13 @@ class Analysis(BaseModel):
     pr_number: Optional[int] = Field(None, description="Pull request number if fix was created")
     pr_url: Optional[str] = Field(None, description="Pull request URL")
 
+    # Debate and summary
+    debate_transcript: List[Dict[str, Any]] = Field(
+        default_factory=list,
+        description="Full transcript of agent debate/discussion"
+    )
+    summary: Optional[str] = Field(None, description="Final analysis summary")
+
     # Feedback
     user_approved: Optional[bool] = None
     user_feedback: Optional[str] = None
