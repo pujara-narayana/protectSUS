@@ -15,7 +15,7 @@ class CompressionService:
     def __init__(self):
         self.api_key = settings.TOKEN_COMPANY_API_KEY
         self.model = settings.TOKEN_COMPANY_MODEL
-        self.base_url = "https://api.tokencompany.com/v1"
+        self.base_url = "https://api.thetokencompany.com/v1"
 
     async def compress_code(
         self,
@@ -44,10 +44,12 @@ class CompressionService:
                     f"{self.base_url}/compress",
                     json={
                         "model": self.model,
-                        "content": combined_code,
-                        "target_tokens": target_tokens,
-                        "preserve_structure": True,
-                        "preserve_security_patterns": True
+                        "compression_settings": {
+                            "aggressiveness": 0.5,
+                            "max_output_tokens": target_tokens,
+                            "min_output_tokens": None
+                        },
+                        "input": combined_code
                     },
                     headers={
                         "Authorization": f"Bearer {self.api_key}",
@@ -64,17 +66,19 @@ class CompressionService:
                 result = response.json()
 
                 logger.info(
-                    f"Compression successful: {result.get('original_tokens', 0)} -> "
-                    f"{result.get('compressed_tokens', 0)} tokens "
-                    f"({result.get('compression_ratio', 0):.1%} reduction)"
+                    f"Compression successful: {result.get('original_input_tokens', 0)} -> "
+                    f"{result.get('output_tokens', 0)} tokens "
+                    f"(saved {result.get('original_input_tokens', 0) - result.get('output_tokens', 0)} tokens)"
                 )
 
+                compression_ratio = 1 - (result.get('output_tokens', 0) / max(result.get('original_input_tokens', 1), 1))
+
                 return {
-                    'compressed_code': result['compressed_content'],
-                    'original_tokens': result.get('original_tokens', 0),
-                    'compressed_tokens': result.get('compressed_tokens', 0),
-                    'compression_ratio': result.get('compression_ratio', 0),
-                    'file_mapping': self._create_file_mapping(code_files, result.get('compressed_content', ''))
+                    'compressed_code': result['output'],
+                    'original_tokens': result.get('original_input_tokens', 0),
+                    'compressed_tokens': result.get('output_tokens', 0),
+                    'compression_ratio': compression_ratio,
+                    'file_mapping': self._create_file_mapping(code_files, result.get('output', ''))
                 }
 
         except Exception as e:
