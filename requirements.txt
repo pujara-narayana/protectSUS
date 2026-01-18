@@ -32,7 +32,7 @@ email-validator==2.1.0
 # GitHub Integration
 PyGithub==2.1.1
 GitPython==3.1.41
-
+neo4j
 # HTTP Clients
 httpx==0.26.0
 requests==2.31.0
