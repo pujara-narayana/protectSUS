@@ -70,8 +70,14 @@ class Settings(BaseSettings):
 
     @property
     def phoenix_url(self) -> Optional[str]:
-        """Get Phoenix URL from either BASE_URL or COLLECTOR_ENDPOINT"""
-        return self.PHOENIX_BASE_URL or self.PHOENIX_COLLECTOR_ENDPOINT
+        """Get Phoenix URL from either BASE_URL, COLLECTOR_ENDPOINT, or HOST:PORT"""
+        if self.PHOENIX_BASE_URL:
+            return self.PHOENIX_BASE_URL
+        if self.PHOENIX_COLLECTOR_ENDPOINT:
+            return self.PHOENIX_COLLECTOR_ENDPOINT
+        if self.PHOENIX_HOST and self.PHOENIX_PORT:
+            return f"http://{self.PHOENIX_HOST}:{self.PHOENIX_PORT}"
+        return None
 
     class Config:
         env_file = ".env"

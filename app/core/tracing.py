@@ -33,29 +33,37 @@ def setup_phoenix_tracing(
         print(f"[PHOENIX] API Key present: {bool(api_key)}")
         print(f"[PHOENIX] Base URL: {base_url}")
         
-        # Set environment variables for Phoenix OTEL
-        if api_key:
-            # Remove quotes if present
-            clean_api_key = api_key.strip("'\"")
-            os.environ["PHOENIX_API_KEY"] = clean_api_key
-            print(f"[PHOENIX] Set PHOENIX_API_KEY")
-
-        if base_url:
-            # Remove quotes if present  
-            clean_url = base_url.strip("'\"")
-            # Phoenix OTEL uses PHOENIX_COLLECTOR_ENDPOINT
-            os.environ["PHOENIX_COLLECTOR_ENDPOINT"] = clean_url
-            print(f"[PHOENIX] Set PHOENIX_COLLECTOR_ENDPOINT: {clean_url}")
-
+        # Clean up values (remove quotes if present)
+        clean_api_key = api_key.strip("'\"") if api_key else None
+        clean_url = base_url.strip("'\"") if base_url else None
+        
+        # Build headers for authentication
+        headers = {}
+        if clean_api_key:
+            headers["authorization"] = f"Bearer {clean_api_key}"
+            print(f"[PHOENIX] Added authorization header")
+        
         # Import Phoenix OTEL register
         from phoenix.otel import register
         print("[PHOENIX] Imported phoenix.otel.register")
 
-        # Configure the Phoenix tracer
+        # Configure the Phoenix tracer with endpoint passed directly
         print(f"[PHOENIX] Registering tracer for project: {project_name}")
-        tracer_provider = register(
-            project_name=project_name
-        )
+        print(f"[PHOENIX] Using endpoint: {clean_url}")
+        
+        register_kwargs = {
+            "project_name": project_name,
+        }
+        
+        # Pass endpoint if provided
+        if clean_url:
+            register_kwargs["endpoint"] = clean_url
+        
+        # Pass headers if we have authentication
+        if headers:
+            register_kwargs["headers"] = headers
+            
+        tracer_provider = register(**register_kwargs)
         print("[PHOENIX] Tracer registered")
 
         # Manually instrument LLM providers
