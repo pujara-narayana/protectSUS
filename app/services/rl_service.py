@@ -1,6 +1,6 @@
 """Reinforcement Learning service for improving analysis over time"""
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
 import numpy as np
