@@ -76,6 +76,48 @@ export default function KnowledgeGraphView({ repoFullName }: KnowledgeGraphViewP
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedNode, setSelectedNode] = useState<GraphNode | null>(null);
+    const [indexing, setIndexing] = useState(false);
+    const [indexingMessage, setIndexingMessage] = useState<string | null>(null);
+
+    const triggerIndexing = useCallback(async () => {
+        if (!repoFullName) return;
+
+        setIndexing(true);
+        setIndexingMessage("Starting knowledge graph indexing...");
+        setError(null);
+
+        try {
+            const [owner, repo] = repoFullName.split("/");
+
+            const response = await fetch(
+                `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/kg/${owner}/${repo}/index`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Failed to trigger knowledge graph indexing");
+            }
+
+            const data = await response.json();
+            setIndexingMessage(data.message || "Indexing started! This may take a few minutes.");
+
+            // Poll for completion
+            setTimeout(() => {
+                fetchGraphData();
+                setIndexing(false);
+                setIndexingMessage(null);
+            }, 10000); // Check after 10 seconds
+        } catch (err: any) {
+            setError(err.message || "Failed to start indexing");
+            setIndexing(false);
+            setIndexingMessage(null);
+        }
+    }, [repoFullName]);
 
     const fetchGraphData = useCallback(async () => {
         if (!repoFullName) return;
@@ -143,16 +185,39 @@ export default function KnowledgeGraphView({ repoFullName }: KnowledgeGraphViewP
         );
     }
 
-    // Render empty state
+    // Render empty state or indexing state
     if (nodes.length === 0) {
         return (
             <div className="flex items-center justify-center h-96 bg-gray-900 rounded-lg">
-                <div className="flex flex-col items-center gap-4 text-center">
-                    <Network className="w-12 h-12 text-gray-600" />
-                    <p className="text-gray-400">No knowledge graph data available yet.</p>
-                    <p className="text-gray-500 text-sm">
-                        Run a security analysis to populate the graph.
-                    </p>
+                <div className="flex flex-col items-center gap-4 text-center max-w-md">
+                    {indexing ? (
+                        <>
+                            <RefreshCw className="w-12 h-12 text-indigo-500 animate-spin" />
+                            <p className="text-indigo-400 font-medium">Generating Knowledge Graph...</p>
+                            <p className="text-gray-500 text-sm">{indexingMessage}</p>
+                        </>
+                    ) : (
+                        <>
+                            <Network className="w-12 h-12 text-gray-600" />
+                            <p className="text-gray-400">No knowledge graph data available yet.</p>
+                            <p className="text-gray-500 text-sm">
+                                Generate a knowledge graph to visualize your codebase structure, dependencies, and security findings.
+                            </p>
+                            <button
+                                onClick={triggerIndexing}
+                                className="mt-2 px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center gap-2 font-medium"
+                            >
+                                <RefreshCw className="w-4 h-4" />
+                                Generate Knowledge Graph
+                            </button>
+                            <button
+                                onClick={fetchGraphData}
+                                className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
+                            >
+                                Refresh
+                            </button>
+                        </>
+                    )}
                 </div>
             </div>
         );
@@ -238,20 +303,20 @@ export default function KnowledgeGraphView({ repoFullName }: KnowledgeGraphViewP
                                             key={node.id}
                                             onClick={() => setSelectedNode(node)}
                                             className={`p-2 rounded cursor-pointer transition-colors ${selectedNode?.id === node.id
-                                                    ? "bg-gray-700"
-                                                    : "hover:bg-gray-700/50"
+                                                ? "bg-gray-700"
+                                                : "hover:bg-gray-700/50"
                                                 }`}
                                         >
                                             <p className="text-sm text-white truncate">{node.label}</p>
                                             {node.severity && (
                                                 <span
                                                     className={`text-xs px-2 py-0.5 rounded ${node.severity === "critical"
-                                                            ? "bg-red-500/20 text-red-400"
-                                                            : node.severity === "high"
-                                                                ? "bg-orange-500/20 text-orange-400"
-                                                                : node.severity === "medium"
-                                                                    ? "bg-yellow-500/20 text-yellow-400"
-                                                                    : "bg-gray-500/20 text-gray-400"
+                                                        ? "bg-red-500/20 text-red-400"
+                                                        : node.severity === "high"
+                                                            ? "bg-orange-500/20 text-orange-400"
+                                                            : node.severity === "medium"
+                                                                ? "bg-yellow-500/20 text-yellow-400"
+                                                                : "bg-gray-500/20 text-gray-400"
                                                         }`}
                                                 >
                                                     {node.severity}
