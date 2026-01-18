@@ -3,7 +3,7 @@ import './globals.css';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
-  title: 'CodeVault - AI Security Sentinel',
+  title: 'ProtectSUS - AI Security Sentinel',
   description: 'Secure your smart contracts with agentic intelligence',
 };
 
