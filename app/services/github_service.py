@@ -1,6 +1,6 @@
 """GitHub integration service for code retrieval and PR management"""
 
-from github import Github, Auth
+from github import Github, Auth, GithubIntegration
 from github.GithubException import GithubException
 import git
 import tempfile
@@ -21,50 +21,28 @@ class GitHubService:
         """Initialize GitHub client"""
         # Read private key from file
         with open(settings.GITHUB_APP_PRIVATE_KEY_PATH, 'r') as key_file:
-            private_key = key_file.read()
+            self.private_key = key_file.read()
 
+        self.app_id = settings.GITHUB_APP_ID
+        
         # Authenticate as GitHub App
-        auth = Auth.AppAuth(settings.GITHUB_APP_ID, private_key)
+        auth = Auth.AppAuth(self.app_id, self.private_key)
         self.github = Github(auth=auth)
 
     def get_installation_client(self, repo_full_name: str) -> Github:
         """Get GitHub client for a specific installation"""
-        try:
-            # Read private key
-            with open(settings.GITHUB_APP_PRIVATE_KEY_PATH, 'r') as key_file:
-                private_key = key_file.read()
-            
-            owner, repo = repo_full_name.split('/')
-            
-            # Create app authentication to get installation ID
-            app_auth = Auth.AppAuth(
-                app_id=settings.GITHUB_APP_ID,
-                private_key=private_key
-            )
-            github_app = Github(auth=app_auth)
-            
-            # Get all installations and find the one for this repo's owner
-            installation_id = None
-            for installation in github_app.get_app().get_installations():
-                if installation.account.login.lower() == owner.lower():
-                    installation_id = installation.id
-                    break
-            
-            if installation_id is None:
-                raise Exception(f"No installation found for owner: {owner}")
-            
-            # Now authenticate as the installation
-            installation_auth = Auth.AppInstallationAuth(
-                app_id=settings.GITHUB_APP_ID,
-                private_key=private_key,
-                installation_id=installation_id
-            )
-            
-            return Github(auth=installation_auth)
-            
-        except Exception as e:
-            logger.error(f"Error getting installation client: {e}")
-            raise
+        owner = repo_full_name.split("/")[0]
+
+        integration = GithubIntegration(
+            self.app_id,
+            self.private_key,
+        )
+
+        for installation in integration.get_installations():
+            if installation.account.login.lower() == owner.lower():
+                return integration.get_github_for_installation(installation.id)
+
+        raise Exception(f"No installation found for repo owner {owner}")
 
     async def clone_repository(
         self,
