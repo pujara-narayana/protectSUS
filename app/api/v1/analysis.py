@@ -1,11 +1,12 @@
 """Analysis status and results endpoints"""
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from typing import Optional
 import logging
 
 from app.services.analysis_service import AnalysisService
 from app.models.analysis import Analysis
+from app.core.database import MongoDB
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -60,6 +61,48 @@ async def get_repo_analyses(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
+@router.get("/analysis/repo/{owner}/{repo}/commit/{commit_sha}")
+async def get_analysis_by_commit(
+    owner: str,
+    repo: str,
+    commit_sha: str
+):
+    """
+    Get analysis for a specific commit
+    
+    Returns the analysis for the given repo and commit SHA.
+    This enables real-time dashboard updates when viewing a specific commit.
+    """
+    try:
+        repo_full_name = f"{owner}/{repo}"
+        db = MongoDB.get_database()
+        
+        # Find analysis for this specific commit
+        result = await db.analyses.find_one({
+            "repo_full_name": repo_full_name,
+            "commit_sha": commit_sha
+        })
+        
+        if not result:
+            return {
+                "repo": repo_full_name,
+                "commit_sha": commit_sha,
+                "analysis": None,
+                "message": "No analysis found for this commit"
+            }
+        
+        analysis = Analysis(**result)
+        return {
+            "repo": repo_full_name,
+            "commit_sha": commit_sha,
+            "analysis": analysis
+        }
+        
+    except Exception as e:
+        logger.error(f"Error retrieving analysis by commit: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
 @router.get("/analysis/{analysis_id}/status")
 async def get_analysis_status(analysis_id: str):
     """
@@ -77,3 +120,4 @@ async def get_analysis_status(analysis_id: str):
     except Exception as e:
         logger.error(f"Error retrieving analysis status: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
+

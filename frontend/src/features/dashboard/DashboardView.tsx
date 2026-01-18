@@ -98,12 +98,29 @@ export const Dashboard = ({
     }
   }, [session, repo, commit]);
 
-  // Fetch analysis data from backend
+  // Fetch analysis data from backend for specific commit
   const fetchAnalysis = useCallback(async () => {
-    if (!repo) return;
+    if (!repo || !commit) return;
 
     setAnalysisLoading(true);
     try {
+      // First try to get analysis for this specific commit
+      const commitResponse = await fetch(
+        `${API_URL}/api/v1/analysis/repo/${repo.owner.login}/${repo.name}/commit/${commit.sha}`
+      );
+
+      if (commitResponse.ok) {
+        const data = await commitResponse.json();
+
+        if (data.analysis && data.analysis.status === "completed") {
+          setAnalysis(data.analysis);
+          setHasRecentAnalysis(true);
+          setAnalysisLoading(false);
+          return;
+        }
+      }
+
+      // Fallback: get latest analysis for repo
       const response = await fetch(
         `${API_URL}/api/v1/analysis/repo/${repo.owner.login}/${repo.name}?limit=1`
       );
@@ -142,7 +159,7 @@ export const Dashboard = ({
     } finally {
       setAnalysisLoading(false);
     }
-  }, [repo]);
+  }, [repo, commit]);
 
   useEffect(() => {
     fetchAnalysis();
