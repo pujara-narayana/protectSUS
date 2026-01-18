@@ -89,20 +89,66 @@ export const Dashboard = ({
 
       {/* Tab Navigation */}
       <div className="max-w-[1800px] mx-auto px-8 pt-6">
-        <div className="flex items-center justify-between gap-4">
-          <div className="w-[450px]">
-            <VerdictCard />
+        <div className="w-full">
+          <VerdictCard />
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-[1800px] mx-auto px-8 py-6 w-full">
+        <div className="grid grid-cols-12 gap-4">
+          {/* Left Sidebar - File Tree - matches right column height */}
+          <div className="col-span-2 h-[calc(120vh-16rem)]">
+            <div className="bg-zinc-900/30 rounded-lg border border-zinc-800 p-4 h-full overflow-y-auto">
+              <FileTree tree={tree} onFileClick={handleFileClick} selectedFile={selectedFile} />
+            </div>
           </div>
-          {/* Right: Button */}
-          <button className="py-2.5 px-5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-800 hover:to-indigo-800 rounded-lg text-white text-sm font-semibold transition-all flex items-center gap-2 shadow-lg shadow-indigo-700/20">
-            Create New PR
-            <span className="text-base">→</span>
-          </button>
+
+          {/* Center - Code View - matches right column height */}
+          <div className="col-span-7 h-[calc(120vh-16rem)]">
+            <div className="bg-[#1a1a1a] rounded-lg border border-zinc-800 overflow-hidden h-full flex flex-col">
+              {/* Code Header */}
+              <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0">
+                <code className="text-xs text-zinc-400 font-mono">
+                  {selectedFile?.path || commit.commit.message || "main.py"}
+                </code>
+              </div>
+
+              {/* Code Content - scrollable */}
+              <div className="flex-1 overflow-y-auto p-4 font-mono text-xs">
+                <pre>{fileContent}</pre>
+              </div>
+            </div>
+          </div>
+
+          {/* Right Sidebar - Vulnerabilities */}
+          <div className="col-span-3 h-[calc(120vh-16rem)] flex flex-col gap-3">
+            {/* Scrollable AI Agent Discussion */}
+            <div className="h-full bg-zinc-900/30 rounded-lg border border-zinc-800 overflow-hidden flex flex-col">
+              {/* Agent Chat Header */}
+              <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0">
+                <div className="flex items-center gap-2">
+                  <Bot className="w-4 h-4 text-zinc-400" />
+                  <h3 className="text-sm font-semibold text-zinc-300">
+                    Agent Debate
+                  </h3>
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                <VulnerabilityCard severity="safe" />
+                <VulnerabilityCard severity="critical" />
+                <VulnerabilityCard severity="safe" />
+                <VulnerabilityCard severity="critical" />
+                <VulnerabilityCard severity="safe" />
+                <VulnerabilityCard severity="critical" />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Metrics Cards */}
-      <div className="max-w-[1800px] mx-auto px-8 pt-6 w-full">
+      <div className="max-w-[1800px] mx-auto px-8 pb-6 w-full">
         <div className="grid grid-cols-4 gap-4">
           <MetricCard
             title="Overall Risk"
@@ -130,50 +176,7 @@ export const Dashboard = ({
           />
         </div>
       </div>
-
-      {/* Main Content */}
-      <div className="max-w-[1800px] mx-auto px-8 py-6 w-full">
-        <div className="grid grid-cols-12 gap-4">
-          {/* Left Sidebar - File Tree - matches right column height */}
-          <div className="col-span-2 h-[calc(100vh-16rem)]">
-            <div className="bg-zinc-900/30 rounded-lg border border-zinc-800 p-4 h-full overflow-y-auto">
-              <FileTree tree={tree} onFileClick={handleFileClick} selectedFile={selectedFile} />
-            </div>
-          </div>
-
-          {/* Center - Code View - matches right column height */}
-          <div className="col-span-7 h-[calc(100vh-16rem)]">
-            <div className="bg-[#1a1a1a] rounded-lg border border-zinc-800 overflow-hidden h-full flex flex-col">
-              {/* Code Header */}
-              <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0">
-                <code className="text-xs text-zinc-400 font-mono">
-                  {selectedFile?.path || commit.commit.message || "main.py"}
-                </code>
-              </div>
-
-              {/* Code Content - scrollable */}
-              <div className="flex-1 overflow-y-auto p-4 font-mono text-xs">
-                <pre>{fileContent}</pre>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Sidebar - Vulnerabilities */}
-          <div className="col-span-3 h-[calc(100vh-16rem)] flex flex-col gap-3">
-            {/* Scrollable AI Agent Discussion - 65% of height */}
-            <div className="h-full bg-zinc-900/30 rounded-lg border border-zinc-800 overflow-hidden">
-              <div className="h-full overflow-y-auto p-3 space-y-3">
-                <VulnerabilityCard severity="safe" />
-                <VulnerabilityCard severity="critical" />
-                <VulnerabilityCard severity="safe" />
-                <VulnerabilityCard severity="critical" />
-                <VulnerabilityCard severity="safe" />
-                <VulnerabilityCard severity="critical" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+      
     </div>
   );
 };
@@ -309,12 +312,18 @@ const VulnerabilityCard = ({ severity }: { severity: "safe" | "critical" }) => {
 // Verdict Card
 // ----------------------------------------------------------------------------
 const VerdictCard = () => (
-  <div className="bg-gradient-to-br from-red-500/20 via-red-500/10 to-red-600/20 border border-red-500/40 rounded-lg p-5 shadow-lg shadow-red-500/10 h-full flex flex-col overflow-y-auto">
-    <div className="mb-3 flex-shrink-0">
-      <h3 className="text-base font-bold text-red-400 mb-1">
-        VERDICT: CRITICAL Re-entrancy
-      </h3>
-      <p className="text-xs text-red-400/70">Vulnerability Confidence: 94%</p>
+  <div className="bg-gradient-to-br from-blue-500/20 via-blue-500/10 to-blue-600/20 border border-blue-500/40 rounded-lg p-5 shadow-lg shadow-blue-500/10 h-full flex flex-col">
+    <div className="mb-3 flex-shrink-0 flex items-center justify-between">
+      <div>
+        <h3 className="text-base font-bold text-blue-400 mb-1">
+          VERDICT: CRITICAL Re-entrancy
+        </h3>
+        <p className="text-xs text-blue-400/70">Vulnerability Confidence: 94%</p>
+      </div>
+      <button className="py-2 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-800 hover:to-indigo-800 rounded-lg text-white text-sm font-semibold transition-all flex items-center gap-2 shadow-lg shadow-indigo-700/20 whitespace-nowrap">
+        Create New PR
+        <span className="text-base">→</span>
+      </button>
     </div>
 
     <div className="space-y-3 text-xs text-white/90 flex-1 flex-shrink-0">
@@ -325,15 +334,12 @@ const VerdictCard = () => (
         during the external call.
       </p>
 
-      <div className="pt-2 border-t border-red-500/20">
+      <div className="pt-2 border-t border-blue-500/20">
         <p className="font-semibold text-white mb-1">
           Recommended Fix:{" "}
           <span className="font-normal">
             Apply nonReentrant modifier to callback()
           </span>
-        </p>
-        <p className="text-red-400">
-          Severity: Critical - Fund drainage possible
         </p>
       </div>
     </div>

@@ -45,7 +45,7 @@ const Header = () => (
             Pricing
           </button>
           <a
-            href="https://devpost.com/software/protectsus" // Replace with your actual Devpost URL
+            href="https://devpost.com/software/protetsus?ref_content=user-portfolio&ref_feature=in_progress" // Replace with your actual Devpost URL
             target="_blank"
             rel="noopener noreferrer"
             className="text-zinc-300 hover:text-white transition-colors"
@@ -67,7 +67,7 @@ const LandingPage = ({ onSignIn }: { onSignIn: () => void }) => (
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
             <h1 className="text-5xl sm:text-6xl font-bold text-white mb-6 leading-tight">
-              Secure Your Smart Contracts with{" "}
+              Secure Your Code Base with{" "}
               <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 Agentic Intelligence
               </span>
@@ -121,8 +121,8 @@ const LandingPage = ({ onSignIn }: { onSignIn: () => void }) => (
         />
         <FeatureCard
           icon={<TrendingUp className="w-6 h-6 text-blue-400" />}
-          title="Market-Weighted Risk"
-          description="Risk scores are adjusted in real-time based on Polymarket sentiment."
+          title="Reinforcement Learning"
+          description="Our agents synthesize, test, and open Pull Requests to patch vulnerabilities."
         />
         <FeatureCard
           icon={<Code className="w-6 h-6 text-blue-400" />}
