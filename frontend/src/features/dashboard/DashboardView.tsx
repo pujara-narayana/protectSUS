@@ -12,11 +12,9 @@ import {
   Shield,
   Folder,
   File,
-  Network,
   Loader2,
   Clock,
 } from "lucide-react";
-import KnowledgeGraphView from "./KnowledgeGraphView";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
@@ -79,7 +77,7 @@ export const Dashboard = ({
   const [tree, setTree] = useState<any[]>([]);
   const [selectedFile, setSelectedFile] = useState<any>(null);
   const [fileContent, setFileContent] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<"files" | "code" | "debate" | "kg">("files");
+  const [activeTab, setActiveTab] = useState<"files" | "code" | "debate">("files");
 
   // Analysis state
   const [analysis, setAnalysis] = useState<AnalysisData | null>(null);
@@ -176,6 +174,48 @@ export const Dashboard = ({
     ).then(setFileContent);
   };
 
+  // Trigger audit state
+  const [auditTriggering, setAuditTriggering] = useState(false);
+
+  // Trigger a new security audit
+  const triggerAudit = useCallback(async () => {
+    if (!repo || !commit) return;
+
+    setAuditTriggering(true);
+    try {
+      const response = await fetch(
+        `${API_URL}/api/v1/analysis/trigger`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            repo_full_name: `${repo.owner.login}/${repo.name}`,
+            commit_sha: commit.sha,
+            clone_url: repo.clone_url,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Audit triggered:", data);
+        // Wait a bit then refresh analysis
+        setTimeout(() => {
+          fetchAnalysis();
+          setAuditTriggering(false);
+        }, 3000);
+      } else {
+        console.error("Failed to trigger audit");
+        setAuditTriggering(false);
+      }
+    } catch (error) {
+      console.error("Error triggering audit:", error);
+      setAuditTriggering(false);
+    }
+  }, [repo, commit, fetchAnalysis]);
+
   // Calculate metrics from analysis
   const metrics = {
     overallRisk: analysis ? calculateOverallRisk(analysis) : null,
@@ -227,6 +267,8 @@ export const Dashboard = ({
           loading={analysisLoading}
           hasAnalysis={hasRecentAnalysis}
           prUrl={analysis?.pr_url}
+          onTriggerAudit={triggerAudit}
+          triggering={auditTriggering}
         />
       </div>
 
@@ -242,16 +284,6 @@ export const Dashboard = ({
           >
             <Folder className="w-4 h-4 inline mr-2" />
             Code Explorer
-          </button>
-          <button
-            onClick={() => setActiveTab("kg")}
-            className={`py-2 px-6 rounded-lg font-medium text-sm transition-colors ${activeTab === "kg"
-              ? "bg-blue-600 text-white"
-              : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-              }`}
-          >
-            <Network className="w-4 h-4 inline mr-2" />
-            Knowledge Graph
           </button>
         </div>
       </div>
@@ -286,16 +318,6 @@ export const Dashboard = ({
           >
             Agent Debate
           </button>
-          <button
-            onClick={() => setActiveTab("kg")}
-            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${activeTab === "kg"
-              ? "bg-blue-600 text-white"
-              : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-              }`}
-          >
-            <Network className="w-4 h-4 inline mr-1" />
-            KG
-          </button>
         </div>
       </div>
 
@@ -303,7 +325,7 @@ export const Dashboard = ({
       <div className="max-w-[1800px] mx-auto px-4 sm:px-6 md:px-8 py-6 w-full">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
           {/* File Explorer */}
-          <div className={`col-span-1 md:col-span-2 ${activeTab === "files" ? "block" : "hidden"} ${activeTab === "kg" ? "hidden" : "md:block"}`}>
+          <div className={`col-span-1 md:col-span-2 ${activeTab === "files" ? "block" : "hidden md:block"}`}>
             <div className="md:h-[calc(120vh-16rem)] h-[60vh]">
               <div className="bg-zinc-900/30 rounded-lg border border-zinc-800 p-4 h-full overflow-y-auto">
                 <FileTree tree={tree} onFileClick={handleFileClick} selectedFile={selectedFile} />
@@ -312,7 +334,7 @@ export const Dashboard = ({
           </div>
 
           {/* Code View */}
-          <div className={`col-span-1 md:col-span-7 ${activeTab === "code" ? "block" : "hidden"} ${activeTab === "kg" ? "hidden" : "md:block"}`}>
+          <div className={`col-span-1 md:col-span-7 ${activeTab === "code" ? "block" : "hidden md:block"}`}>
             <div className="md:h-[calc(120vh-16rem)] h-[60vh]">
               <div className="bg-[#1a1a1a] rounded-lg border border-zinc-800 overflow-hidden h-full flex flex-col">
                 <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0">
@@ -328,7 +350,7 @@ export const Dashboard = ({
           </div>
 
           {/* Agent Debate */}
-          <div className={`col-span-1 md:col-span-3 ${activeTab === "debate" ? "block" : "hidden"} ${activeTab === "kg" ? "hidden" : "md:block"}`}>
+          <div className={`col-span-1 md:col-span-3 ${activeTab === "debate" ? "block" : "hidden md:block"}`}>
             <div className="md:h-[calc(120vh-16rem)] h-[60vh]">
               <div className="h-full bg-zinc-900/30 rounded-lg border border-zinc-800 overflow-hidden flex flex-col">
                 <div className="px-4 py-3 border-b border-zinc-800 bg-zinc-900/30 flex-shrink-0">
@@ -354,13 +376,6 @@ export const Dashboard = ({
             </div>
           </div>
         </div>
-
-        {/* Knowledge Graph */}
-        {activeTab === "kg" && (
-          <div className="col-span-1 md:col-span-12">
-            <KnowledgeGraphView repoFullName={`${repo.owner.login}/${repo.name}`} />
-          </div>
-        )}
       </div>
 
       {/* Metrics Cards */}
@@ -610,12 +625,16 @@ const VerdictCard = ({
   verdict,
   loading,
   hasAnalysis,
-  prUrl
+  prUrl,
+  onTriggerAudit,
+  triggering
 }: {
   verdict: ReturnType<typeof getVerdict> | null;
   loading: boolean;
   hasAnalysis: boolean;
   prUrl?: string;
+  onTriggerAudit?: () => void;
+  triggering?: boolean;
 }) => {
   if (loading) {
     return (
@@ -632,19 +651,38 @@ const VerdictCard = ({
           <div>
             <h3 className="text-base font-bold text-zinc-500 mb-1 flex items-center gap-2">
               <Clock className="w-5 h-5" />
-              AWAITING AUDIT
+              {triggering ? "AUDIT IN PROGRESS" : "AWAITING AUDIT"}
             </h3>
-            <p className="text-xs text-zinc-600">No recent security analysis available</p>
+            <p className="text-xs text-zinc-600">
+              {triggering ? "Security analysis is running..." : "No recent security analysis available"}
+            </p>
           </div>
-          <button className="py-2 px-4 bg-gradient-to-r from-zinc-700 to-zinc-600 rounded-lg text-zinc-300 text-sm font-semibold transition-all flex items-center gap-2 shadow-lg whitespace-nowrap cursor-not-allowed opacity-60">
-            Trigger Audit
-            <span className="text-base">→</span>
+          <button
+            onClick={onTriggerAudit}
+            disabled={triggering}
+            className={`py-2 px-4 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 shadow-lg whitespace-nowrap ${triggering
+              ? "bg-indigo-600 text-white cursor-wait"
+              : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white cursor-pointer"
+              }`}
+          >
+            {triggering ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Running...
+              </>
+            ) : (
+              <>
+                Trigger Audit
+                <span className="text-base">→</span>
+              </>
+            )}
           </button>
         </div>
         <div className="text-xs text-zinc-600 flex-1">
           <p>
-            Push code to the main branch or manually trigger a security audit to receive
-            vulnerability analysis, agent debates, and fix recommendations.
+            {triggering
+              ? "Analyzing code for vulnerabilities. This may take 1-2 minutes..."
+              : "Push code to the main branch or manually trigger a security audit to receive vulnerability analysis, agent debates, and fix recommendations."}
           </p>
         </div>
       </div>

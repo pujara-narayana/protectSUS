@@ -121,3 +121,53 @@ async def get_analysis_status(analysis_id: str):
         logger.error(f"Error retrieving analysis status: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
 
+
+from pydantic import BaseModel
+
+class TriggerAnalysisRequest(BaseModel):
+    repo_full_name: str
+    commit_sha: str
+    clone_url: str
+
+
+@router.post("/analysis/trigger")
+async def trigger_analysis(request: TriggerAnalysisRequest):
+    """
+    Manually trigger a security analysis for a repository at a specific commit.
+    
+    This endpoint allows the frontend to trigger an on-demand security audit
+    without requiring a push event.
+    """
+    try:
+        # Check if analysis already exists for this commit
+        db = MongoDB.get_database()
+        existing = await db.analyses.find_one({
+            "repo_full_name": request.repo_full_name,
+            "commit_sha": request.commit_sha
+        })
+        
+        if existing:
+            return {
+                "status": "exists",
+                "analysis_id": existing.get("id"),
+                "message": "Analysis already exists for this commit"
+            }
+        
+        # Trigger new analysis
+        analysis_id = await AnalysisService.trigger_analysis(
+            repo_full_name=request.repo_full_name,
+            commit_sha=request.commit_sha,
+            clone_url=request.clone_url
+        )
+        
+        logger.info(f"Manually triggered analysis {analysis_id} for {request.repo_full_name}@{request.commit_sha[:7]}")
+        
+        return {
+            "status": "triggered",
+            "analysis_id": analysis_id,
+            "message": "Security analysis has been triggered"
+        }
+        
+    except Exception as e:
+        logger.error(f"Error triggering analysis: {e}", exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to trigger analysis: {str(e)}")
