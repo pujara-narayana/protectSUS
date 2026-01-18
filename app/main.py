@@ -7,6 +7,7 @@ import logging
 
 from app.core.config import settings
 from app.core.database import connect_databases, disconnect_databases
+from app.core.tracing import setup_phoenix_tracing, get_phoenix_url
 from app.api.v1 import webhooks, analysis, feedback, chat
 from app.api import auth
 
@@ -23,6 +24,25 @@ async def lifespan(app: FastAPI):
     """Application lifespan manager"""
     # Startup
     logger.info("Starting ProtectSUS application...")
+
+    # Initialize Phoenix tracing
+    if settings.PHOENIX_ENABLED:
+        tracer = setup_phoenix_tracing(
+            project_name="protectsus-agents",
+            enabled=settings.PHOENIX_ENABLED,
+            api_key=settings.PHOENIX_API_KEY,
+            collector_endpoint=settings.PHOENIX_COLLECTOR_ENDPOINT
+        )
+
+        if tracer:
+            phoenix_url = get_phoenix_url(
+                host=settings.PHOENIX_HOST,
+                port=settings.PHOENIX_PORT,
+                collector_endpoint=settings.PHOENIX_COLLECTOR_ENDPOINT
+            )
+            logger.info(f"Phoenix UI available at: {phoenix_url}")
+
+    # Connect databases
     await connect_databases()
     logger.info("Application started successfully")
 

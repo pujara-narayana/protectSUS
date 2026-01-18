@@ -63,6 +63,8 @@ class Settings(BaseSettings):
     PHOENIX_ENABLED: bool = True
     PHOENIX_HOST: str = "localhost"
     PHOENIX_PORT: int = 6006
+    PHOENIX_API_KEY: Optional[str] = None
+    PHOENIX_COLLECTOR_ENDPOINT: Optional[str] = None
 
     class Config:
         env_file = ".env"
