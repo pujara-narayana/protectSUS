@@ -12,6 +12,7 @@ from app.services.agents.orchestrator import AgentOrchestrator
 from app.services.fix_service import FixService
 from app.services.cache_service import RepositoryCacheService
 from app.services.knowledge_graph_service import KnowledgeGraphService
+from app.services.code_parser_service import CodeParserService
 from app.core.database import MongoDB, connect_databases, disconnect_databases
 from app.models.analysis import AnalysisStatus
 
@@ -112,8 +113,28 @@ async def _run_analysis_async(
             )
             return
 
-        # Step 3: Compress code
-        logger.info("Step 3: Compressing code")
+        # Step 3: Parse and index codebase structure (skip if already indexed)
+        logger.info("Step 3: Checking if codebase needs indexing")
+        try:
+            from app.core.database import RedisDB
+            redis = RedisDB.get_client()
+            index_key = f"indexed:{repo_full_name}:{commit_sha}"
+            already_indexed = await redis.get(index_key)
+            
+            if already_indexed:
+                logger.info("Step 3: Codebase already indexed for this commit, skipping")
+            else:
+                logger.info("Step 3: Parsing codebase structure")
+                code_structure = await CodeParserService.parse_files(code_files)
+                await KnowledgeGraphService.index_codebase(repo_full_name, code_structure)
+                # Mark as indexed (TTL: 7 days)
+                await redis.setex(index_key, 604800, "1")
+                logger.info("Step 3: Indexed codebase in Neo4j")
+        except Exception as e:
+            logger.warning(f"Failed to index codebase: {e}")
+
+        # Step 4: Compress code
+        logger.info("Step 4: Compressing code")
         compression_result = await compression_service.compress_code(
             code_files=code_files,
             target_tokens=100000

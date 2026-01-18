@@ -480,3 +480,163 @@ class KnowledgeGraphService:
         except Exception as e:
             logger.error(f"Error getting repo graph data: {e}")
             return {"nodes": [], "edges": [], "stats": {}}
+
+    @staticmethod
+    async def index_codebase(
+        repo_full_name: str,
+        code_structure: Dict[str, Any]
+    ):
+        """
+        Index the entire codebase structure in Neo4j.
+        
+        Creates nodes for Files, Functions, Classes, and their relationships.
+        
+        Args:
+            repo_full_name: Full repository name (owner/repo)
+            code_structure: Parsed code structure from CodeParserService
+        """
+        try:
+            driver = Neo4jDB.get_driver()
+            
+            async with driver.session() as session:
+                # Ensure repository exists
+                await session.run(
+                    """
+                    MERGE (r:Repository {full_name: $repo_full_name})
+                    ON CREATE SET r.name = $repo_name,
+                                  r.owner = $repo_owner,
+                                  r.created_at = datetime()
+                    SET r.updated_at = datetime(),
+                        r.indexed_at = datetime()
+                    """,
+                    repo_full_name=repo_full_name,
+                    repo_name=repo_full_name.split("/")[-1],
+                    repo_owner=repo_full_name.split("/")[0]
+                )
+                
+                # Create File nodes
+                for file_info in code_structure.get("files", []):
+                    await session.run(
+                        """
+                        MATCH (r:Repository {full_name: $repo_full_name})
+                        MERGE (f:File {path: $path, repository: $repo_full_name})
+                        SET f.language = $language,
+                            f.line_count = $line_count,
+                            f.updated_at = datetime()
+                        MERGE (r)-[:CONTAINS]->(f)
+                        """,
+                        repo_full_name=repo_full_name,
+                        path=file_info["path"],
+                        language=file_info.get("language", "unknown"),
+                        line_count=file_info.get("line_count", 0)
+                    )
+                
+                # Create Function nodes
+                for func_info in code_structure.get("functions", []):
+                    await session.run(
+                        """
+                        MATCH (f:File {path: $file_path, repository: $repo_full_name})
+                        MERGE (fn:Function {
+                            name: $name,
+                            file_path: $file_path,
+                            repository: $repo_full_name
+                        })
+                        SET fn.line_start = $line_start,
+                            fn.line_end = $line_end,
+                            fn.is_async = $is_async,
+                            fn.args = $args,
+                            fn.updated_at = datetime()
+                        MERGE (f)-[:DEFINES]->(fn)
+                        """,
+                        repo_full_name=repo_full_name,
+                        file_path=func_info["file_path"],
+                        name=func_info["name"],
+                        line_start=func_info.get("line_start", 0),
+                        line_end=func_info.get("line_end", 0),
+                        is_async=func_info.get("is_async", False),
+                        args=func_info.get("args", [])
+                    )
+                
+                # Create Class nodes
+                for class_info in code_structure.get("classes", []):
+                    await session.run(
+                        """
+                        MATCH (f:File {path: $file_path, repository: $repo_full_name})
+                        MERGE (c:Class {
+                            name: $name,
+                            file_path: $file_path,
+                            repository: $repo_full_name
+                        })
+                        SET c.line_start = $line_start,
+                            c.line_end = $line_end,
+                            c.bases = $bases,
+                            c.methods = $methods,
+                            c.updated_at = datetime()
+                        MERGE (f)-[:DEFINES]->(c)
+                        """,
+                        repo_full_name=repo_full_name,
+                        file_path=class_info["file_path"],
+                        name=class_info["name"],
+                        line_start=class_info.get("line_start", 0),
+                        line_end=class_info.get("line_end", 0),
+                        bases=class_info.get("bases", []),
+                        methods=class_info.get("methods", [])
+                    )
+                    
+                    # Create EXTENDS relationships
+                    for base in class_info.get("bases", []):
+                        await session.run(
+                            """
+                            MATCH (c:Class {name: $class_name, repository: $repo_full_name})
+                            MERGE (bc:Class {name: $base_name, repository: $repo_full_name})
+                            MERGE (c)-[:EXTENDS]->(bc)
+                            """,
+                            repo_full_name=repo_full_name,
+                            class_name=class_info["name"],
+                            base_name=base
+                        )
+                
+                # Create Module/Import nodes
+                for import_info in code_structure.get("imports", []):
+                    module_name = import_info.get("module", "")
+                    if module_name:
+                        await session.run(
+                            """
+                            MATCH (f:File {path: $file_path, repository: $repo_full_name})
+                            MERGE (m:Module {name: $module_name})
+                            MERGE (f)-[:IMPORTS]->(m)
+                            """,
+                            repo_full_name=repo_full_name,
+                            file_path=import_info["file_path"],
+                            module_name=module_name
+                        )
+                
+                # Create CALLS relationships (function to function)
+                for call_info in code_structure.get("calls", []):
+                    await session.run(
+                        """
+                        MATCH (f:File {path: $file_path, repository: $repo_full_name})-[:DEFINES]->(caller:Function)
+                        WHERE caller.line_start <= $call_line
+                        WITH caller ORDER BY caller.line_start DESC LIMIT 1
+                        MERGE (called:Function {name: $called_name, repository: $repo_full_name})
+                        MERGE (caller)-[:CALLS]->(called)
+                        """,
+                        repo_full_name=repo_full_name,
+                        file_path=call_info["file_path"],
+                        call_line=call_info.get("line", 0),
+                        called_name=call_info["name"]
+                    )
+            
+            # Log summary
+            stats = {
+                "files": len(code_structure.get("files", [])),
+                "functions": len(code_structure.get("functions", [])),
+                "classes": len(code_structure.get("classes", [])),
+                "imports": len(code_structure.get("imports", []))
+            }
+            logger.info(f"Indexed codebase for {repo_full_name}: {stats}")
+            
+        except Exception as e:
+            logger.error(f"Error indexing codebase: {e}")
+            raise
+
