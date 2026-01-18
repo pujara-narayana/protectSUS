@@ -50,7 +50,7 @@ def setup_phoenix_tracing(
         tracer_provider = register(
             project_name=project_name,
             endpoint=clean_url,
-            auto_instrument=True
+            # auto_instrument=True
         )
 
         print(f"[PHOENIX] ✓ Tracing initialized!")
