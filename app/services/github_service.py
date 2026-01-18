@@ -30,14 +30,46 @@ class GitHubService:
     def get_installation_client(self, repo_full_name: str) -> Github:
         """Get GitHub client for a specific installation"""
         try:
+            # First, use app-level auth to get the installation
+            with open(settings.GITHUB_APP_PRIVATE_KEY_PATH, 'r') as key_file:
+                private_key = key_file.read()
+            
+            app_auth = Auth.AppAuth(
+                app_id=settings.GITHUB_APP_ID,
+                private_key=private_key
+            )
+            
+            # Get the installation ID from the repository
+            app_github = Github(auth=app_auth)
             owner, repo = repo_full_name.split('/')
-            installation = self.github.get_repo(repo_full_name).get_installation()
+            
+            # Try to get installation for the repo
+            try:
+                installation = app_github.get_repo(repo_full_name).get_installation()
+                installation_id = installation.id
+            except Exception as e:
+                # If that fails, try getting it from the app installations
+                logger.warning(f"Could not get installation from repo, trying app installations: {e}")
+                installations = app_github.get_app().get_installations()
+                installation_id = None
+                for inst in installations:
+                    # Find the installation that has access to this repo
+                    if owner in [inst.account.login]:
+                        installation_id = inst.id
+                        break
+                
+                if installation_id is None:
+                    raise Exception(f"No installation found for repository {repo_full_name}")
+            
+            # Now authenticate as the installation
             installation_auth = Auth.AppInstallationAuth(
                 app_id=settings.GITHUB_APP_ID,
-                private_key=open(settings.GITHUB_APP_PRIVATE_KEY_PATH).read(),
-                installation_id=installation.id
+                private_key=private_key,
+                installation_id=installation_id
             )
+            
             return Github(auth=installation_auth)
+            
         except Exception as e:
             logger.error(f"Error getting installation client: {e}")
             raise
