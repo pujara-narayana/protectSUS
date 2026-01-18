@@ -36,17 +36,28 @@ class DependencyAgent(BaseAgent):
                 'findings_count': 0
             }
 
-        system_prompt = """You are an expert in software supply chain security and dependency management.
+        system_prompt = """You are an expert in software supply chain security, dependency management, and build systems.
 
-Your task is to analyze the provided dependency files for security risks.
+Your task is to analyze the provided dependency files for security risks AND potential build/runtime issues.
 
-Focus on:
+**DEPENDENCY SECURITY RISKS:**
 1. Known vulnerabilities (CVEs) in dependencies
 2. Outdated packages with available security updates
 3. Deprecated or unmaintained packages
 4. Supply chain risks (typosquatting, malicious packages)
 5. License compliance issues
 6. Transitive dependency risks
+
+**BUILD & COMPATIBILITY ISSUES:**
+7. Version conflicts between dependencies
+8. Missing required dependencies
+9. Incompatible package versions (breaking changes)
+10. Platform-specific dependencies that may fail
+11. Dependency resolution conflicts
+12. Deprecated package versions that may cause build failures
+13. Peer dependency mismatches
+
+**PRIORITY:** Flag CRITICAL issues that will prevent build or cause immediate runtime failures.
 
 For each risky dependency found, provide output in this format:
 
@@ -56,15 +67,22 @@ LATEST: [latest version]
 RISK_LEVEL: [critical|high|medium|low]
 VULNERABILITIES: [comma-separated CVE IDs or vulnerability descriptions]
 OUTDATED: [yes|no]
-RECOMMENDATION: [what action to take]
+BUILD_IMPACT: [will this cause build failures or runtime errors?]
+RECOMMENDATION: [what action to take with specific version if applicable]
 
-Be specific and actionable. Focus on actual security risks."""
+Be specific and actionable. Prioritize issues that will break the build or cause runtime failures."""
 
-        user_prompt = f"""Analyze these dependency files for security risks:
+        user_prompt = f"""Analyze these dependency files for security risks AND build/compatibility issues:
 
 {dependencies}
 
-Provide detailed risk assessment following the specified format."""
+**IMPORTANT:**
+1. Check for version conflicts and incompatibilities first
+2. Identify deprecated packages that may break builds
+3. Look for missing peer dependencies
+4. Then assess security vulnerabilities
+
+Provide detailed risk assessment following the specified format, prioritizing issues that will break builds or cause runtime failures."""
 
         try:
             # Call LLM API
