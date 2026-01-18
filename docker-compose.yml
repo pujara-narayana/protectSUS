@@ -13,6 +13,7 @@ services:
       - .env
     depends_on:
       - redis
+      - neo4j
     volumes:
       - ./app:/app/app
       - ./models:/app/models
@@ -34,6 +35,7 @@ services:
       - .env
     depends_on:
       - redis
+      - neo4j
     volumes:
       - ./app:/app/app
       - ./models:/app/models
@@ -54,6 +56,22 @@ services:
     restart: unless-stopped
     command: redis-server --appendonly yes
 
+  neo4j:
+    image: neo4j:5.15-community
+    container_name: protectsus-neo4j
+    ports:
+      - "7474:7474"  # HTTP
+      - "7687:7687"  # Bolt
+    environment:
+      - NEO4J_AUTH=neo4j/protectsus123
+      - NEO4J_PLUGINS=["apoc"]
+    volumes:
+      - neo4j-data:/data
+      - neo4j-logs:/logs
+    networks:
+      - protectsus-network
+    restart: unless-stopped
+
   nginx:
     image: nginx:1.24-alpine
     container_name: protectsus-nginx
@@ -69,6 +87,8 @@ services:
 
 volumes:
   redis-data:
+  neo4j-data:
+  neo4j-logs:
 
 networks:
   protectsus-network:
