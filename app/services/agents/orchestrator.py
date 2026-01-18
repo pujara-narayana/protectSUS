@@ -28,9 +28,18 @@ class AnalysisState(TypedDict):
 class AgentOrchestrator:
     """Orchestrator for multi-agent security analysis using LangGraph"""
 
-    def __init__(self):
-        self.vulnerability_agent = VulnerabilityAgent()
-        self.dependency_agent = DependencyAgent()
+    def __init__(self, user_settings: dict = None):
+        """
+        Initialize orchestrator with optional user LLM settings.
+        
+        Args:
+            user_settings: Optional dict with 'llm_provider' and 'api_key' keys
+        """
+        llm_provider = user_settings.get('llm_provider') if user_settings else None
+        custom_api_key = user_settings.get('api_key') if user_settings else None
+        
+        self.vulnerability_agent = VulnerabilityAgent(llm_provider=llm_provider, custom_api_key=custom_api_key)
+        self.dependency_agent = DependencyAgent(llm_provider=llm_provider, custom_api_key=custom_api_key)
         self.graph = self._build_graph()
 
     def _build_graph(self) -> StateGraph:

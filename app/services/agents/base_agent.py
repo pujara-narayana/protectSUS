@@ -14,9 +14,9 @@ logger = logging.getLogger(__name__)
 class BaseAgent(ABC):
     """Base class for security analysis agents"""
 
-    def __init__(self, name: str, llm_provider: str = None):
+    def __init__(self, name: str, llm_provider: str = None, custom_api_key: str = None):
         self.name = name
-        self.llm_client = LLMClient(provider=llm_provider)
+        self.llm_client = LLMClient(provider=llm_provider, custom_api_key=custom_api_key)
         self.max_tokens = 4096
 
     @abstractmethod

@@ -13,8 +13,8 @@ logger = logging.getLogger(__name__)
 class DependencyAgent(BaseAgent):
     """Agent for assessing dependency security risks"""
 
-    def __init__(self):
-        super().__init__("DependencyAgent")
+    def __init__(self, llm_provider: str = None, custom_api_key: str = None):
+        super().__init__("DependencyAgent", llm_provider=llm_provider, custom_api_key=custom_api_key)
 
     async def analyze(self, code: str, context: Dict[str, Any]) -> Dict[str, Any]:
         """
