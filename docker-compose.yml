@@ -1,7 +1,4 @@
-version: '3.8'
-
 services:
-  # FastAPI application
   api:
     build: .
     container_name: protectsus-api
@@ -19,11 +16,11 @@ services:
     volumes:
       - ./app:/app/app
       - ./models:/app/models
+      - ./secrets:/app/secrets:ro
     networks:
       - protectsus-network
     restart: unless-stopped
 
-  # Celery worker for background tasks
   celery-worker:
     build: .
     container_name: protectsus-celery-worker
@@ -40,11 +37,11 @@ services:
     volumes:
       - ./app:/app/app
       - ./models:/app/models
+      - ./secrets:/app/secrets:ro
     networks:
       - protectsus-network
     restart: unless-stopped
 
-  # Redis for caching and Celery
   redis:
     image: redis:7.2-alpine
     container_name: protectsus-redis
@@ -57,13 +54,11 @@ services:
     restart: unless-stopped
     command: redis-server --appendonly yes
 
-  # Nginx reverse proxy (optional, for production)
   nginx:
     image: nginx:1.24-alpine
     container_name: protectsus-nginx
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:

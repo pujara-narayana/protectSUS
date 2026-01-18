@@ -1,0 +1,14 @@
+{
+    # Optional: enable global options here
+}
+
+{$DOMAIN} {
+    encode gzip
+
+    # Forward all requests to FastAPI app
+    reverse_proxy api:8000
+
+    # Health check passthrough (optional)
+    @health path /health
+    reverse_proxy @health api:8000
+}
