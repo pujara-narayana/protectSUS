@@ -51,12 +51,34 @@ def setup_phoenix_tracing(
         from phoenix.otel import register
         print("[PHOENIX] Imported phoenix.otel.register")
 
-        # Configure the Phoenix tracer with auto-instrumentation
+        # Configure the Phoenix tracer
         print(f"[PHOENIX] Registering tracer for project: {project_name}")
         tracer_provider = register(
-            project_name=project_name,
-            auto_instrument=True  # Auto-instrument OpenAI, Anthropic, LangChain
+            project_name=project_name
         )
+        print("[PHOENIX] Tracer registered")
+
+        # Manually instrument LLM providers
+        try:
+            from openinference.instrumentation.openai import OpenAIInstrumentor
+            OpenAIInstrumentor().instrument(tracer_provider=tracer_provider)
+            print("[PHOENIX] ✓ OpenAI instrumented")
+        except Exception as e:
+            print(f"[PHOENIX] OpenAI instrumentation skipped: {e}")
+
+        try:
+            from openinference.instrumentation.anthropic import AnthropicInstrumentor
+            AnthropicInstrumentor().instrument(tracer_provider=tracer_provider)
+            print("[PHOENIX] ✓ Anthropic instrumented")
+        except Exception as e:
+            print(f"[PHOENIX] Anthropic instrumentation skipped: {e}")
+
+        try:
+            from openinference.instrumentation.langchain import LangChainInstrumentor
+            LangChainInstrumentor().instrument(tracer_provider=tracer_provider)
+            print("[PHOENIX] ✓ LangChain instrumented")
+        except Exception as e:
+            print(f"[PHOENIX] LangChain instrumentation skipped: {e}")
 
         print(f"[PHOENIX] ✓ Tracing initialized successfully!")
         print(f"[PHOENIX]   Project: {project_name}")
