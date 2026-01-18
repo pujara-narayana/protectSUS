@@ -336,21 +336,24 @@ async def _regenerate_fix_async(
             }
         )
 
-        # 8. Close old PR with reference to new one
-        await github_service.close_pull_request(
-            repo_full_name=repo_full_name,
-            pr_number=old_pr_number,
-            comment=f"🔄 **Superseded by improved fix PR**\n\n"
-                    f"Based on your feedback, a refined fix has been generated:\n"
-                    f"→ **New PR**: #{new_pr_number}\n\n"
-                    f"**Improvements**:\n"
-                    f"- Applied reinforcement learning guidance\n"
-                    f"- Incorporated {len(rag_patterns)} similar successful patterns\n"
-                    f"- Iteration {iteration_number}/{PRWorkflowService.MAX_ITERATIONS}\n\n"
-                    f"This PR is now closed. Please review the new PR: {new_pr_url}"
-        )
+        # 8. Add comment to old PR with link to new one (PR was already closed in handle_deny)
+        try:
+            await github_service.add_pr_comment(
+                repo_full_name=repo_full_name,
+                pr_number=old_pr_number,
+                comment=f"🔄 **New improved fix PR created!**\n\n"
+                        f"Based on your feedback, a refined fix has been generated:\n"
+                        f"→ **New PR**: #{new_pr_number}\n\n"
+                        f"**Improvements**:\n"
+                        f"- Applied reinforcement learning guidance\n"
+                        f"- Incorporated {len(rag_patterns)} similar successful patterns\n"
+                        f"- Iteration {iteration_number}/{PRWorkflowService.MAX_ITERATIONS}\n\n"
+                        f"Please review the new PR: {new_pr_url}"
+            )
+        except Exception as e:
+            logger.warning(f"Could not add comment to old PR #{old_pr_number}: {e}")
 
-        logger.info(f"Closed old PR #{old_pr_number}")
+        logger.info(f"Created new PR #{new_pr_number} to replace old PR #{old_pr_number}")
 
         return {
             'success': True,

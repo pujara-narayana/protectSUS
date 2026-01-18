@@ -94,7 +94,7 @@ class PRWorkflowService:
                 await github_service.add_pr_comment(
                     repo_full_name=repo_full_name,
                     pr_number=pr_number,
-                    comment="❌ Only repository collaborators can approve/deny protectSUS fixes."
+                    comment="❌ Only repository collaborators can approve/deny fixes."
                 )
                 return {
                     'success': False,
@@ -102,24 +102,11 @@ class PRWorkflowService:
                     'message': f"User {commenter} is not authorized"
                 }
 
-            # 2. Get analysis from database
+            # 2. Get analysis from database (optional - may not exist for non-protectSUS PRs)
             analysis = await PRWorkflowService.get_analysis_by_pr(
                 repo_full_name, pr_number
             )
-
-            if not analysis:
-                await github_service.add_pr_comment(
-                    repo_full_name=repo_full_name,
-                    pr_number=pr_number,
-                    comment="❌ Could not find analysis data for this PR."
-                )
-                return {
-                    'success': False,
-                    'reason': 'analysis_not_found',
-                    'message': 'No analysis found for this PR'
-                }
-
-            analysis_id = analysis['id']
+            analysis_id = analysis['id'] if analysis else None
 
             # 3. Get PR details and check mergeability
             pr_details = await github_service.get_pull_request(
@@ -174,8 +161,8 @@ class PRWorkflowService:
                     repo_full_name=repo_full_name,
                     pr_number=pr_number,
                     merge_method="squash",
-                    commit_title=f"🔒 Security fixes from protectSUS (#{pr_number})",
-                    commit_message=f"Approved by @{commenter}\n\nAnalysis ID: {analysis_id}"
+                    commit_title=f"🔒 Merge PR #{pr_number}",
+                    commit_message=f"Approved by @{commenter}"
                 )
 
                 logger.info(f"Successfully merged PR #{pr_number}: {merge_result}")
@@ -194,66 +181,78 @@ class PRWorkflowService:
                     'message': str(e)
                 }
 
-            # 6. Update analysis in MongoDB
-            db = MongoDB.get_database()
-            await db.analyses.update_one(
-                {'id': analysis_id},
-                {
-                    '$set': {
-                        'user_approved': True,
-                        'approved_by': commenter,
-                        'approved_at': datetime.utcnow(),
-                        'merged': True,
-                        'merge_sha': merge_result['sha']
-                    }
-                }
-            )
-
-            # 7. Extract and store fix patterns for RAG
-            vulnerabilities = analysis.get('vulnerabilities', [])
-            fixes = analysis.get('fixes', [])
-
+            # 6. Update analysis in MongoDB (if analysis exists)
             pattern_ids = []
-            for i, vuln in enumerate(vulnerabilities):
-                if i < len(fixes):
-                    fix = fixes[i]
-                    try:
-                        pattern_id = await FixPatternService.store_successful_pattern(
-                            analysis_id=analysis_id,
-                            vulnerability_type=vuln.get('type', 'UNKNOWN'),
-                            severity=vuln.get('severity', 'medium'),
-                            file_path=vuln.get('file_path', ''),
-                            code_before=fix.get('original_content', ''),
-                            code_after=fix.get('fixed_content', ''),
-                            fix_description=fix.get('description', ''),
-                            repo_full_name=repo_full_name
-                        )
-                        pattern_ids.append(pattern_id)
-                    except Exception as e:
-                        logger.error(f"Error storing fix pattern: {e}")
-
-            logger.info(f"Stored {len(pattern_ids)} fix patterns for analysis {analysis_id}")
-
-            # 8. Submit feedback to RL system
-            try:
-                await FeedbackService.submit_feedback(
-                    analysis_id=analysis_id,
-                    approved=True,
-                    feedback_text=f"PR approved and merged by @{commenter}"
+            if analysis_id:
+                db = MongoDB.get_database()
+                await db.analyses.update_one(
+                    {'id': analysis_id},
+                    {
+                        '$set': {
+                            'user_approved': True,
+                            'approved_by': commenter,
+                            'approved_at': datetime.utcnow(),
+                            'merged': True,
+                            'merge_sha': merge_result['sha']
+                        }
+                    }
                 )
-            except Exception as e:
-                logger.error(f"Error submitting feedback: {e}")
+
+                # 7. Extract and store fix patterns for RAG
+                vulnerabilities = analysis.get('vulnerabilities', [])
+                fixes = analysis.get('fixes', [])
+
+                for i, vuln in enumerate(vulnerabilities):
+                    if i < len(fixes):
+                        fix = fixes[i]
+                        try:
+                            pattern_id = await FixPatternService.store_successful_pattern(
+                                analysis_id=analysis_id,
+                                vulnerability_type=vuln.get('type', 'UNKNOWN'),
+                                severity=vuln.get('severity', 'medium'),
+                                file_path=vuln.get('file_path', ''),
+                                code_before=fix.get('original_content', ''),
+                                code_after=fix.get('fixed_content', ''),
+                                fix_description=fix.get('description', ''),
+                                repo_full_name=repo_full_name
+                            )
+                            pattern_ids.append(pattern_id)
+                        except Exception as e:
+                            logger.error(f"Error storing fix pattern: {e}")
+
+                logger.info(f"Stored {len(pattern_ids)} fix patterns for analysis {analysis_id}")
+
+                # 8. Submit feedback to RL system
+                try:
+                    await FeedbackService.submit_feedback(
+                        analysis_id=analysis_id,
+                        approved=True,
+                        feedback_text=f"PR approved and merged by @{commenter}"
+                    )
+                except Exception as e:
+                    logger.error(f"Error submitting feedback: {e}")
 
             # 9. Add success comment to PR
+            if analysis_id:
+                comment_text = (
+                    f"✅ **PR Approved and Merged!**\n\n"
+                    f"Thank you @{commenter} for approving these security fixes.\n\n"
+                    f"- **Analysis ID**: `{analysis_id}`\n"
+                    f"- **Merge SHA**: `{merge_result['sha'][:7]}`\n"
+                    f"- **Patterns Stored**: {len(pattern_ids)} fix patterns saved for future reference\n\n"
+                    f"🤖 This fix has been added to the protectSUS knowledge base to improve future fixes."
+                )
+            else:
+                comment_text = (
+                    f"✅ **PR Approved and Merged!**\n\n"
+                    f"Thank you @{commenter} for the approval.\n\n"
+                    f"- **Merge SHA**: `{merge_result['sha'][:7]}`"
+                )
+            
             await github_service.add_pr_comment(
                 repo_full_name=repo_full_name,
                 pr_number=pr_number,
-                comment=f"✅ **PR Approved and Merged!**\n\n"
-                        f"Thank you @{commenter} for approving these security fixes.\n\n"
-                        f"- **Analysis ID**: `{analysis_id}`\n"
-                        f"- **Merge SHA**: `{merge_result['sha'][:7]}`\n"
-                        f"- **Patterns Stored**: {len(pattern_ids)} fix patterns saved for future reference\n\n"
-                        f"🤖 This fix has been added to the protectSUS knowledge base to improve future fixes."
+                comment=comment_text
             )
 
             return {
@@ -387,9 +386,7 @@ class PRWorkflowService:
             except Exception as e:
                 logger.error(f"Error submitting feedback to RL: {e}")
 
-            # 7. Queue background task for regeneration
-            # This will be handled by the pr_workflow_tasks module
-            # For now, add a comment indicating regeneration will happen
+            # 7. Close the current PR first
             await github_service.add_pr_comment(
                 repo_full_name=repo_full_name,
                 pr_number=pr_number,
@@ -401,16 +398,26 @@ class PRWorkflowService:
                         f"- Changes requested: {len(feedback_features.get('requested_changes', []))}\n"
                         f"- Sentiment: {feedback_features.get('sentiment', 'unknown')}\n"
                         f"- Specificity score: {feedback_features.get('specificity_score', 0):.2f}\n\n"
-                        f"🤖 **protectSUS is now generating an improved fix based on your feedback...**\n\n"
-                        f"A new PR will be created shortly. This PR will be closed once the new PR is ready."
+                        f"⏳ **Closing this PR and generating an improved fix...**"
             )
+
+            # Close the PR
+            await github_service.close_pull_request(
+                repo_full_name=repo_full_name,
+                pr_number=pr_number,
+                comment=f"🔄 **PR closed based on feedback**\n\n"
+                        f"Feedback from @{commenter}: \"{feedback_text}\"\n\n"
+                        f"🤖 protectSUS is now generating an improved fix. A new PR will be created shortly."
+            )
+
+            logger.info(f"Closed PR #{pr_number} before regeneration")
 
             # Return success with regeneration pending
             # The actual regeneration will be handled by a background task
             return {
                 'success': True,
                 'reason': 'feedback_received',
-                'message': 'Feedback received, regeneration queued',
+                'message': 'Feedback received, PR closed, regeneration queued',
                 'analysis_id': analysis_id,
                 'iteration_number': iteration_number,
                 'feedback_features': feedback_features,
