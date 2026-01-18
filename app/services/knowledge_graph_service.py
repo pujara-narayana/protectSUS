@@ -315,3 +315,162 @@ class KnowledgeGraphService:
         except Exception as e:
             logger.error(f"Error creating analysis summary node: {e}")
             raise
+
+    @staticmethod
+    async def get_repo_graph_data(repo_full_name: str) -> Dict[str, Any]:
+        """
+        Get complete knowledge graph data for a repository for visualization.
+        
+        Returns nodes and edges in a format suitable for graph visualization libraries.
+        
+        Args:
+            repo_full_name: Full repository name (owner/repo)
+            
+        Returns:
+            Dictionary with nodes, edges, and stats
+        """
+        try:
+            driver = Neo4jDB.get_driver()
+            nodes = []
+            edges = []
+            
+            async with driver.session() as session:
+                # Get repository node
+                repo_result = await session.run(
+                    """
+                    MATCH (r:Repository {full_name: $repo_full_name})
+                    RETURN r
+                    """,
+                    repo_full_name=repo_full_name
+                )
+                async for record in repo_result:
+                    repo = dict(record['r'])
+                    nodes.append({
+                        "id": f"repo:{repo_full_name}",
+                        "type": "repository",
+                        "label": repo_full_name.split("/")[-1],
+                        "data": repo
+                    })
+                
+                # Get file nodes and edges
+                file_result = await session.run(
+                    """
+                    MATCH (r:Repository {full_name: $repo_full_name})-[:CONTAINS]->(f:File)
+                    RETURN f
+                    """,
+                    repo_full_name=repo_full_name
+                )
+                async for record in file_result:
+                    file = dict(record['f'])
+                    file_id = f"file:{file.get('path', '')}"
+                    nodes.append({
+                        "id": file_id,
+                        "type": "file",
+                        "label": file.get('path', '').split("/")[-1],
+                        "data": file
+                    })
+                    edges.append({
+                        "source": f"repo:{repo_full_name}",
+                        "target": file_id,
+                        "type": "CONTAINS"
+                    })
+                
+                # Get vulnerability nodes and edges
+                vuln_result = await session.run(
+                    """
+                    MATCH (r:Repository {full_name: $repo_full_name})-[:CONTAINS]->(f:File)-[:HAS_VULNERABILITY]->(v:Vulnerability)
+                    RETURN f.path as file_path, v
+                    """,
+                    repo_full_name=repo_full_name
+                )
+                async for record in vuln_result:
+                    vuln = dict(record['v'])
+                    vuln_id = f"vuln:{vuln.get('id', '')}"
+                    file_path = record['file_path']
+                    nodes.append({
+                        "id": vuln_id,
+                        "type": "vulnerability",
+                        "label": vuln.get('type', 'Unknown'),
+                        "severity": vuln.get('severity', 'unknown'),
+                        "data": vuln
+                    })
+                    edges.append({
+                        "source": f"file:{file_path}",
+                        "target": vuln_id,
+                        "type": "HAS_VULNERABILITY"
+                    })
+                
+                # Get dependency nodes and edges
+                dep_result = await session.run(
+                    """
+                    MATCH (r:Repository {full_name: $repo_full_name})-[:DEPENDS_ON]->(d:Dependency)
+                    RETURN d
+                    """,
+                    repo_full_name=repo_full_name
+                )
+                async for record in dep_result:
+                    dep = dict(record['d'])
+                    dep_id = f"dep:{dep.get('package_name', '')}@{dep.get('version', '')}"
+                    nodes.append({
+                        "id": dep_id,
+                        "type": "dependency",
+                        "label": f"{dep.get('package_name', '')}@{dep.get('version', '')}",
+                        "risk_level": dep.get('risk_level', 'low'),
+                        "data": dep
+                    })
+                    edges.append({
+                        "source": f"repo:{repo_full_name}",
+                        "target": dep_id,
+                        "type": "DEPENDS_ON"
+                    })
+                
+                # Get analysis nodes and edges
+                analysis_result = await session.run(
+                    """
+                    MATCH (r:Repository {full_name: $repo_full_name})-[:HAS_ANALYSIS]->(a:Analysis)
+                    RETURN a
+                    ORDER BY a.created_at DESC
+                    LIMIT 10
+                    """,
+                    repo_full_name=repo_full_name
+                )
+                async for record in analysis_result:
+                    analysis = dict(record['a'])
+                    analysis_id = f"analysis:{analysis.get('id', '')}"
+                    nodes.append({
+                        "id": analysis_id,
+                        "type": "analysis",
+                        "label": f"Analysis {analysis.get('id', '')[:8]}",
+                        "data": {
+                            "id": analysis.get('id'),
+                            "summary": analysis.get('summary', ''),
+                            "created_at": str(analysis.get('created_at', ''))
+                        }
+                    })
+                    edges.append({
+                        "source": f"repo:{repo_full_name}",
+                        "target": analysis_id,
+                        "type": "HAS_ANALYSIS"
+                    })
+            
+            # Calculate stats
+            stats = {
+                "total_nodes": len(nodes),
+                "total_edges": len(edges),
+                "files": len([n for n in nodes if n["type"] == "file"]),
+                "vulnerabilities": len([n for n in nodes if n["type"] == "vulnerability"]),
+                "dependencies": len([n for n in nodes if n["type"] == "dependency"]),
+                "analyses": len([n for n in nodes if n["type"] == "analysis"])
+            }
+            
+            logger.info(f"Retrieved graph data for {repo_full_name}: {stats}")
+            
+            return {
+                "nodes": nodes,
+                "edges": edges,
+                "stats": stats
+            }
+            
+        except Exception as e:
+            logger.error(f"Error getting repo graph data: {e}")
+            return {"nodes": [], "edges": [], "stats": {}}

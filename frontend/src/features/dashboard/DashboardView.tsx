@@ -12,7 +12,9 @@ import {
   Shield,
   Folder,
   File,
+  Network,
 } from "lucide-react";
+import KnowledgeGraphView from "./KnowledgeGraphView";
 
 // ----------------------------------------------------------------------------
 // Dashboard
@@ -32,7 +34,7 @@ export const Dashboard = ({
   const [tree, setTree] = useState<any[]>([]);
   const [selectedFile, setSelectedFile] = useState<any>(null);
   const [fileContent, setFileContent] = useState<string>("");
-  const [activeTab, setActiveTab] = useState<"files" | "code" | "debate">("files");
+  const [activeTab, setActiveTab] = useState<"files" | "code" | "debate" | "kg">("files");
 
   useEffect(() => {
     if (session && repo && commit) {
@@ -99,33 +101,40 @@ export const Dashboard = ({
         <div className="flex gap-2">
           <button
             onClick={() => setActiveTab("files")}
-            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
-              activeTab === "files"
+            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${activeTab === "files"
                 ? "bg-blue-600 text-white"
                 : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-            }`}
+              }`}
           >
             File Explorer
           </button>
           <button
             onClick={() => setActiveTab("code")}
-            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
-              activeTab === "code"
+            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${activeTab === "code"
                 ? "bg-blue-600 text-white"
                 : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-            }`}
+              }`}
           >
             Code View
           </button>
           <button
             onClick={() => setActiveTab("debate")}
-            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${
-              activeTab === "debate"
+            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${activeTab === "debate"
                 ? "bg-blue-600 text-white"
                 : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
-            }`}
+              }`}
           >
             Agent Debate
+          </button>
+          <button
+            onClick={() => setActiveTab("kg")}
+            className={`flex-1 py-2 px-4 rounded-lg font-medium text-sm transition-colors ${activeTab === "kg"
+                ? "bg-blue-600 text-white"
+                : "bg-zinc-800 text-zinc-400 hover:bg-zinc-700"
+              }`}
+          >
+            <Network className="w-4 h-4 inline mr-1" />
+            KG
           </button>
         </div>
       </div>
@@ -183,6 +192,13 @@ export const Dashboard = ({
             </div>
           </div>
         </div>
+
+        {/* Knowledge Graph (Mobile: conditional, Desktop: full width when active) */}
+        {activeTab === "kg" && (
+          <div className="col-span-1 md:col-span-12">
+            <KnowledgeGraphView repoFullName={`${repo.owner.login}/${repo.name}`} />
+          </div>
+        )}
       </div>
 
       {/* Metrics Cards */}
@@ -262,11 +278,10 @@ const TabButton = ({
   active?: boolean;
 }) => (
   <button
-    className={`px-6 py-2 rounded-lg font-medium text-sm transition-colors ${
-      active
+    className={`px-6 py-2 rounded-lg font-medium text-sm transition-colors ${active
         ? "bg-red-500/80 text-white"
         : "bg-zinc-800/50 text-zinc-400 hover:bg-zinc-800 hover:text-white"
-    }`}
+      }`}
   >
     {children}
   </button>
@@ -283,9 +298,8 @@ const FileTree = ({ tree, onFileClick, selectedFile }: { tree: any[], onFileClic
         <div
           key={i}
           onClick={() => onFileClick(file)}
-          className={`flex items-center gap-2 px-3 py-2 rounded cursor-pointer transition-colors group ${
-            selectedFile?.path === file.path ? "bg-blue-600/20" : "hover:bg-zinc-800/50"
-          }`}>
+          className={`flex items-center gap-2 px-3 py-2 rounded cursor-pointer transition-colors group ${selectedFile?.path === file.path ? "bg-blue-600/20" : "hover:bg-zinc-800/50"
+            }`}>
           <File className="w-4 h-4 text-blue-500" />
           <span className="text-sm text-zinc-400 group-hover:text-white font-mono">
             {file.path}
