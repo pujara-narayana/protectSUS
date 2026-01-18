@@ -33,17 +33,19 @@ try:
     if settings.PHOENIX_ENABLED:
         from app.core.tracing import setup_phoenix_tracing
         
+        phoenix_url = settings.phoenix_url
+        
         logger.info("Initializing Phoenix tracing for Celery worker...")
         tracer = setup_phoenix_tracing(
             project_name="protectsus-celery-worker",
             enabled=settings.PHOENIX_ENABLED,
             api_key=settings.PHOENIX_API_KEY,
-            base_url=settings.PHOENIX_BASE_URL,
+            base_url=phoenix_url,
             client_headers=settings.PHOENIX_CLIENT_HEADERS
         )
         
         if tracer:
-            logger.info("✓ Phoenix tracing initialized for Celery worker")
+            logger.info(f"✓ Phoenix tracing initialized for Celery worker at {phoenix_url}")
         else:
             logger.warning("Phoenix tracing initialization returned None")
 except Exception as e:

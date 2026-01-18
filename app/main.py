@@ -27,17 +27,18 @@ async def lifespan(app: FastAPI):
 
     # Initialize Phoenix tracing
     if settings.PHOENIX_ENABLED:
+        phoenix_url = settings.phoenix_url
         tracer = setup_phoenix_tracing(
             project_name="protectsus-agents",
             enabled=settings.PHOENIX_ENABLED,
             api_key=settings.PHOENIX_API_KEY,
-            base_url=settings.PHOENIX_BASE_URL,
+            base_url=phoenix_url,
             client_headers=settings.PHOENIX_CLIENT_HEADERS
         )
 
         if tracer:
-            phoenix_url = get_phoenix_url(base_url=settings.PHOENIX_BASE_URL)
-            logger.info(f"Phoenix UI available at: {phoenix_url}")
+            display_url = get_phoenix_url(base_url=phoenix_url)
+            logger.info(f"Phoenix UI available at: {display_url}")
 
     # Connect databases
     await connect_databases()

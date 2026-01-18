@@ -62,8 +62,16 @@ class Settings(BaseSettings):
     # Arize Phoenix Tracing
     PHOENIX_ENABLED: bool = True
     PHOENIX_BASE_URL: Optional[str] = None  # e.g., https://app.phoenix.arize.com/s/your-space
+    PHOENIX_COLLECTOR_ENDPOINT: Optional[str] = None  # Alternative to BASE_URL
     PHOENIX_API_KEY: Optional[str] = None
     PHOENIX_CLIENT_HEADERS: Optional[str] = None
+    PHOENIX_HOST: Optional[str] = "localhost"
+    PHOENIX_PORT: Optional[int] = 6006
+
+    @property
+    def phoenix_url(self) -> Optional[str]:
+        """Get Phoenix URL from either BASE_URL or COLLECTOR_ENDPOINT"""
+        return self.PHOENIX_BASE_URL or self.PHOENIX_COLLECTOR_ENDPOINT
 
     class Config:
         env_file = ".env"
