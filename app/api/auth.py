@@ -44,43 +44,65 @@ async def login(
 @router.get("/auth")
 async def oauth_callback(
     code: Optional[str] = Query(None, description="Authorization code from GitHub"),
+    installation_id: Optional[int] = Query(None, description="GitHub App installation ID"),
+    setup_action: Optional[str] = Query(None, description="GitHub App setup action"),
     state: Optional[str] = Query(None, description="State parameter for CSRF protection"),
     error: Optional[str] = Query(None, description="Error from GitHub OAuth"),
     error_description: Optional[str] = Query(None, description="Error description from GitHub"),
 ):
     """
-    GitHub OAuth callback endpoint
+    GitHub App installation and OAuth callback endpoint
 
-    This endpoint is called by GitHub after user authorizes the application.
-    It exchanges the authorization code for an access token and creates/updates the user.
+    This endpoint handles both:
+    1. GitHub App installation callbacks (with installation_id and setup_action)
+    2. GitHub OAuth callbacks (without installation_id)
 
     Query Parameters:
         code: Authorization code from GitHub (required for success)
+        installation_id: GitHub App installation ID (present for app installations)
+        setup_action: Action type for GitHub App setup (e.g., "install", "update")
         state: State parameter for CSRF validation
         error: Error code if authorization failed
         error_description: Description of error if authorization failed
 
     Returns:
-        JSON response with user data on success, or error message on failure
+        JSON response with installation or user data on success, or error message on failure
     """
     # Check for OAuth errors
     if error:
-        logger.warning(f"OAuth error: {error} - {error_description}")
+        logger.warning(f"OAuth/App error: {error} - {error_description}")
         raise HTTPException(
             status_code=400,
-            detail=f"GitHub OAuth error: {error_description or error}"
+            detail=f"GitHub error: {error_description or error}"
         )
 
     # Validate code parameter
     if not code:
-        logger.warning("OAuth callback missing code parameter")
+        logger.warning("Callback missing code parameter")
         raise HTTPException(
             status_code=400,
             detail="Missing authorization code"
         )
 
     try:
-        # Handle OAuth callback and create/update user
+        # Check if this is a GitHub App installation callback
+        if installation_id is not None:
+            logger.info(f"GitHub App installation callback: installation_id={installation_id}, setup_action={setup_action}")
+            
+            # For GitHub App installations, we just acknowledge the installation
+            # The actual webhook events will handle repository access
+            return JSONResponse(
+                status_code=200,
+                content={
+                    "status": "success",
+                    "message": f"GitHub App {setup_action or 'installed'} successfully",
+                    "installation_id": installation_id,
+                    "setup_action": setup_action,
+                    "next_steps": "The app is now installed. Push code or create a pull request to trigger security analysis."
+                }
+            )
+        
+        # Otherwise, handle as OAuth callback for user authentication
         user = await UserAuthService.handle_oauth_callback(code, state)
 
         logger.info(f"User {user.github_login} authenticated successfully")
@@ -110,7 +132,7 @@ async def oauth_callback(
         )
 
     except Exception as e:
-        logger.error(f"OAuth callback error: {e}", exc_info=True)
+        logger.error(f"Callback error: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail=f"Authentication failed: {str(e)}"
