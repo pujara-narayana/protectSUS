@@ -21,8 +21,9 @@ const Header = () => (
       <div className="flex items-center justify-between h-16">
         <button
           onClick={() => scrollToSection('hero')}
-          className="text-xl font-bold text-white hover:text-blue-400 transition-colors"
+          className="flex items-center gap-2 text-xl text-white hover:text-blue-400 transition-colors"
         >
+          <img src="/logo-white.svg" alt="ProtectSUS Logo" className="h-6 w-6" />
           ProtectSUS
         </button>
         <nav className="flex items-center gap-8">
@@ -66,14 +67,14 @@ const LandingPage = ({ onSignIn }: { onSignIn: () => void }) => (
       <div className="relative max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-24 sm:py-32">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           <div>
-            <h1 className="text-5xl sm:text-6xl font-bold text-white mb-6 leading-tight">
+            <h1 className="text-5xl sm:text-6xl text-white mb-6 leading-tight">
               Secure Your Code Base with{" "}
-              <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
                 Agentic Intelligence
               </span>
             </h1>
             <p className="text-xl text-zinc-400 mb-8 leading-relaxed">
-              protectSUS uses multi-agent debate to catch vulnerabilities before they deploy.
+              ProtectSUS uses multi-agent debate to catch vulnerabilities before they deploy.
             </p>
             <button
               onClick={onSignIn}
@@ -154,7 +155,7 @@ const LandingPage = ({ onSignIn }: { onSignIn: () => void }) => (
               <li>• Basic vulnerability detection</li>
               <li>• Community support</li>
             </ul>
-            <button className="w-full px-6 py-3 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition-colors">
+            <button onClick={onSignIn} className="w-full px-6 py-3 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition-colors">
               Get Started
             </button>
           </div>
@@ -167,7 +168,7 @@ const LandingPage = ({ onSignIn }: { onSignIn: () => void }) => (
               <li>• Priority support</li>
               <li>• Market-weighted risk scores</li>
             </ul>
-            <button className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-500 hover:to-indigo-500 transition-all duration-200">
+            <button onClick={onSignIn} className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg hover:from-blue-500 hover:to-indigo-500 transition-all duration-200">
               Start Free Trial
             </button>
           </div>
@@ -180,7 +181,7 @@ const LandingPage = ({ onSignIn }: { onSignIn: () => void }) => (
               <li>• Dedicated support</li>
               <li>• Custom AI models</li>
             </ul>
-            <button className="w-full px-6 py-3 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition-colors">
+            <button onClick={onSignIn} className="w-full px-6 py-3 bg-zinc-800 text-white rounded-lg hover:bg-zinc-700 transition-colors">
               Contact Sales
             </button>
           </div>

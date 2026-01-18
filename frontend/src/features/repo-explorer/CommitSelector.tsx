@@ -65,7 +65,7 @@ const CommitSelector = ({ onSelectCommit, onSignOut, session }: { onSelectCommit
     <div className="min-h-screen bg-zinc-950 py-12">
       <div className="max-w-5xl mx-auto px-6 sm:px-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-white">Select a Commit to Audit</h1>
+          <h1 className="text-3xl text-white">Select a Commit to Audit</h1>
           <button onClick={onSignOut} className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors">
             <LogOut className="w-4 h-4" />
             Logout
