@@ -8,7 +8,7 @@ import logging
 from app.core.config import settings
 from app.core.database import connect_databases, disconnect_databases
 from app.core.tracing import setup_phoenix_tracing, get_phoenix_url
-from app.api.v1 import webhooks, analysis, feedback, chat, knowledge_graph, graphs
+from app.api.v1 import webhooks, analysis, feedback, chat, knowledge_graph, graphs, admin
 from app.api import auth
 
 # Configure logging
@@ -82,6 +82,7 @@ app.include_router(feedback.router, prefix="/api/v1", tags=["feedback"])
 app.include_router(chat.router, prefix="/api/v1", tags=["chat"])
 app.include_router(knowledge_graph.router, prefix="/api/v1", tags=["knowledge-graph"])
 app.include_router(graphs.router, prefix="/api/v1", tags=["graphs"])
+app.include_router(admin.router, prefix="/api/v1", tags=["admin"])
 
 
 @app.get("/")
