@@ -116,10 +116,23 @@ async def _run_analysis_async(
             }
         )
 
-        # Step 5: Generate fixes if vulnerabilities found
+        # Step 5: Post analysis summary to PR if this was triggered by a PR
+        if pr_number:
+            logger.info(f"Step 5: Posting analysis results to PR #{pr_number}")
+            summary_comment = fix_service.generate_summary(
+                analysis_result['vulnerabilities'],
+                analysis_result['dependency_risks']
+            )
+            await github_service.add_pr_comment(
+                repo_full_name=repo_full_name,
+                pr_number=pr_number,
+                comment=summary_comment
+            )
+
+        # Step 6: Generate fixes if vulnerabilities found
         pr_info = None
         if analysis_result['vulnerabilities']:
-            logger.info(f"Step 5: Generating fixes for {len(analysis_result['vulnerabilities'])} vulnerabilities")
+            logger.info(f"Step 6: Generating fixes for {len(analysis_result['vulnerabilities'])} vulnerabilities")
 
             fixes = await fix_service.generate_fixes(
                 vulnerabilities=analysis_result['vulnerabilities'],
@@ -129,7 +142,7 @@ async def _run_analysis_async(
 
             if fixes:
                 # Create PR with fixes
-                logger.info("Step 6: Creating pull request with fixes")
+                logger.info("Step 7: Creating pull request with fixes")
                 pr_info = await github_service.create_fix_pr(
                     repo_full_name=repo_full_name,
                     base_commit=commit_sha,
@@ -142,8 +155,8 @@ async def _run_analysis_async(
         else:
             logger.info("No vulnerabilities found, skipping fix generation")
 
-        # Step 6: Update analysis with results
-        logger.info("Step 7: Saving analysis results")
+        # Step 8: Update analysis with results
+        logger.info("Step 8: Saving analysis results")
         await _update_analysis_status(
             analysis_id,
             AnalysisStatus.COMPLETED,

@@ -46,10 +46,10 @@ class Settings(BaseSettings):
     GITHUB_APP_PRIVATE_KEY_PATH: str
     GITHUB_WEBHOOK_SECRET: str
 
-    # GitHub OAuth (for user authentication)
-    GITHUB_CLIENT_ID: str
-    GITHUB_CLIENT_SECRET: str
-    GITHUB_OAUTH_CALLBACK_URL: str = "http://protectsus.tech/auth"
+    # GitHub OAuth (for user authentication - optional)
+    GITHUB_CLIENT_ID: Optional[str] = None
+    GITHUB_CLIENT_SECRET: Optional[str] = None
+    GITHUB_OAUTH_CALLBACK_URL: str = "http://api.protectsus.tech/auth"
 
     # Token Company API
     TOKEN_COMPANY_API_KEY: str
