@@ -41,19 +41,22 @@ const chapters = [
 const CHAPTER_SECONDS = 7;
 const DURATION = chapters.length * CHAPTER_SECONDS;
 
+const RECORDING_ID = "Obq2vTh7gec";
+const RECORDING_WATCH_URL = `https://youtu.be/${RECORDING_ID}`;
+const RECORDING_EMBED_URL = `https://www.youtube.com/embed/${RECORDING_ID}?autoplay=1&rel=0&modestbranding=1&playsinline=1&enablejsapi=1`;
+
 /** An explicitly illustrative, local-only walkthrough. Never calls product APIs. */
 export default function ProductDemo({ playRequest }: { playRequest: number }) {
   const { paused: pagePaused, resume } = usePageMotion();
   const root = useRef<HTMLDivElement>(null);
-  const video = useRef<HTMLVideoElement>(null);
+  const video = useRef<HTMLIFrameElement>(null);
   const [mode, setMode] = useState<"walkthrough" | "recording">("walkthrough");
   const [seconds, setSeconds] = useState(0);
   const [playing, setPlaying] = useState(false);
   const [visible, setVisible] = useState(false);
   const [pageVisible, setPageVisible] = useState(true);
   const [reduced, setReduced] = useState(true);
-  const [videoError, setVideoError] = useState(false);
-  const [videoPlaying, setVideoPlaying] = useState(false);
+  const [videoStarted, setVideoStarted] = useState(false);
   const chapter = Math.min(
     chapters.length - 1,
     Math.floor(seconds / CHAPTER_SECONDS),
@@ -117,8 +120,12 @@ export default function ProductDemo({ playRequest }: { playRequest: number }) {
     setPlaying(true);
   }, [playRequest]);
   useEffect(() => {
-    if (!visible || !pageVisible || pagePaused || mode !== "recording")
-      video.current?.pause();
+    if (visible && pageVisible && !pagePaused && mode === "recording") return;
+    // The embed keeps its position; the iframe API only pauses it.
+    video.current?.contentWindow?.postMessage(
+      JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
+      "*",
+    );
   }, [visible, pageVisible, pagePaused, mode]);
 
   const seek = (index: number) => {
@@ -420,50 +427,44 @@ export default function ProductDemo({ playRequest }: { playRequest: number }) {
         </>
       ) : (
         <div className="ps-recording">
-          <video
-            ref={video}
-            controls
-            playsInline
-            preload="metadata"
-            poster="/landing/security-recording.webp"
-            onPlay={() => setVideoPlaying(true)}
-            onPause={() => setVideoPlaying(false)}
-            onEnded={() => setVideoPlaying(false)}
-            onError={() => setVideoError(true)}
-            aria-label="Recorded ProtectSUS security dashboard demo"
-          >
-            <source src="/landing/security-demo.mp4" type="video/mp4" />
-            <track
-              default
-              kind="captions"
-              src="/landing/security-demo.vtt"
-              srcLang="en"
-              label="English"
+          {videoStarted ? (
+            <iframe
+              ref={video}
+              className="ps-recording-frame"
+              src={RECORDING_EMBED_URL}
+              title="Recorded ProtectSUS security dashboard demo"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allowFullScreen
             />
-            Your browser does not support video playback.
-          </video>
-          {!videoPlaying && !videoError && (
+          ) : (
             <button
               type="button"
-              className="ps-recording-play"
+              className="ps-recording-poster"
               onClick={() => {
                 resume();
-                void video.current?.play().catch(() => setVideoError(true));
+                setVideoStarted(true);
               }}
+              aria-label="Play the recorded ProtectSUS demo"
             >
-              <Play size={23} /> Watch the recording <span>11 seconds</span>
+              <img
+                src="/landing/security-recording.webp"
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
+              <span className="ps-recording-play">
+                <Play size={23} /> Watch the recording <span>on YouTube</span>
+              </span>
             </button>
-          )}
-          {videoError && (
-            <p className="ps-recording-error">
-              The recording could not play.{" "}
-              <a href="/landing/security-demo.mp4">Open the video</a> or select
-              the product walkthrough above.
-            </p>
           )}
           <p className="ps-recording-caption">
             Recorded security dashboard: select a commit, open its audit view,
-            and explore repository files. No completed audit result is shown.
+            and explore repository files. No completed audit result is shown.{" "}
+            <a href={RECORDING_WATCH_URL} target="_blank" rel="noreferrer">
+              Open it on YouTube
+            </a>
+            .
           </p>
         </div>
       )}

@@ -6,7 +6,7 @@
 
 Clean's website was used as a public visual reference. Its imagery, logo, customer claims, and copy are not included in these assets.
 
-- `security-demo.mp4`: the existing `/test recording.mp4` security-dashboard recording, resized to 1600px wide at 30fps with H.264 fast-start and its audio track removed. It shows commit selection and code exploration, not a completed audit. `security-recording.webp` is a frame from that recording. `security-demo.vtt` supplies descriptive English captions for the silent sequence.
+- The recorded demo is hosted on YouTube (https://youtu.be/Obq2vTh7gec) and loaded only after the visitor clicks play, via a standard `youtube.com` embed. `security-recording.webp` is the click-to-play poster frame. `security-demo.mp4` and `security-demo.vtt` are the previous self-hosted recording and its captions; they are no longer referenced by the homepage.
 - The four-chapter hero walkthrough is original React/CSS/SVG motion using explicitly illustrative API, code, finding, and draft-review examples. It does not issue product mutations or imply a live scan. Clean’s animated DOM demo informed the interaction format; no Clean code, videos, or artwork were copied.
 
 ## Original coastal artwork

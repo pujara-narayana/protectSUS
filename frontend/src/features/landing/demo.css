@@ -559,14 +559,31 @@
 .ps-recording {
   position: relative;
 }
-.ps-recording video {
+.ps-recording-frame,
+.ps-recording-poster {
   display: block;
   width: 100%;
-  aspect-ratio: 1600 / 906;
+  aspect-ratio: 16 / 9;
+  border: 0;
   background: var(--ps-bg);
+}
+.ps-recording-poster {
+  position: relative;
+  padding: 0;
+  cursor: pointer;
+}
+.ps-recording-poster img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.ps-landing .ps-recording-poster:active {
+  transform: none;
 }
 .ps-recording-play {
   position: absolute;
+  pointer-events: none;
   top: 42%;
   left: 50%;
   transform: translate(-50%, -50%);
@@ -584,17 +601,13 @@
   font-size: 11px;
   color: var(--ps-muted);
 }
-.ps-landing .ps-recording-play:active {
-  transform: translate(-50%, -50%);
-}
-.ps-recording-caption,
-.ps-recording-error {
+.ps-recording-caption {
   padding: 15px 24px;
   color: var(--ps-muted);
   font-size: 11px;
   line-height: 1.7;
 }
-.ps-recording-error a {
+.ps-recording-caption a {
   text-decoration: underline;
   color: var(--ps-blue);
 }
