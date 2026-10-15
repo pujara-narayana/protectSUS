@@ -1,26 +1,20 @@
-"use client";
-
-import { signIn, useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import type { Metadata } from "next";
 import LandingPage from "@/features/landing/LandingPage";
-import TerminalSpinner from "@/features/landing/TerminalSpinner";
+
+export const metadata: Metadata = {
+  title: "ProtectSUS — API maintenance and security review",
+  description:
+    "Understand your API integrations, follow upstream changes, and review evidence-backed patches and security findings in one workspace.",
+  alternates: { canonical: "https://www.protectsus.tech/" },
+  openGraph: {
+    title: "ProtectSUS — Stay ahead of API changes",
+    description: "API maintenance and security review, grounded in your code.",
+    url: "https://www.protectsus.tech/",
+    siteName: "ProtectSUS",
+    type: "website",
+  },
+};
 
 export default function Page() {
-  const { status } = useSession();
-  const router = useRouter();
-
-  const handleSignIn = () => {
-    if (status === "authenticated") {
-      router.push("/dashboard");
-    } else {
-      signIn("github", { callbackUrl: "https://www.protectsus.tech/dashboard" });
-    }
-  };
-
-  if (status === "loading") {
-    return <TerminalSpinner />;
-  }
-
-  return <LandingPage onSignIn={handleSignIn} />;
+  return <LandingPage />;
 }
-
