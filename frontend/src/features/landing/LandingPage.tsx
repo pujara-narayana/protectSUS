@@ -6,6 +6,8 @@ import {
   ArrowRight,
   ArrowUpRight,
   Check,
+  CalendarDays,
+  Download,
   GitBranch,
   Menu,
   ShieldCheck,
@@ -73,16 +75,27 @@ function Brand({ footer = false }: { footer?: boolean }) {
     </a>
   );
 }
-function BookingLink({ compact = false }: { compact?: boolean }) {
+function DownloadLink({ compact = false }: { compact?: boolean }) {
   return (
     <a
       className={`ps-button ps-button-primary${compact ? " ps-button-compact" : ""}`}
+      href="/download"
+    >
+      Download
+      <Download size={16} aria-hidden="true" />
+    </a>
+  );
+}
+function MeetingLink() {
+  return (
+    <a
+      className="ps-button ps-button-secondary"
       href={BOOKING_URL}
       target="_blank"
       rel="noopener noreferrer"
     >
-      Book a demo
-      <ArrowUpRight size={16} aria-hidden="true" />
+      <CalendarDays size={16} aria-hidden="true" />
+      Book a meeting
     </a>
   );
 }
@@ -95,6 +108,7 @@ function LandingContent() {
     { href: "#product", title: "Product" },
     { href: "#security", title: "Security" },
     { href: "#questions", title: "FAQ" },
+    { href: "#contact", title: "Contact" },
   ];
   return (
     <div
@@ -128,7 +142,7 @@ function LandingContent() {
             ))}
           </nav>
           <div className="ps-nav-actions">
-            <BookingLink compact />
+            <DownloadLink compact />
             <button
               id="ps-menu-toggle"
               className="ps-menu-toggle"
@@ -174,7 +188,7 @@ function LandingContent() {
             workspace.
           </p>
           <div className="ps-actions">
-            <BookingLink />
+            <DownloadLink />
             <button
               className="ps-button ps-button-secondary"
               type="button"
@@ -304,6 +318,21 @@ function LandingContent() {
         </section>
 
         <section
+          id="contact"
+          className="ps-contact ps-container"
+          aria-labelledby="ps-contact-heading"
+        >
+          <div>
+            <h2 id="ps-contact-heading">Contact us</h2>
+            <p>
+              Questions, a pilot for your team, or a walkthrough of your own
+              repository? Book 30 minutes with the founders.
+            </p>
+          </div>
+          <MeetingLink />
+        </section>
+
+        <section
           className="ps-close ps-container"
           aria-labelledby="ps-close-heading"
         >
@@ -316,11 +345,14 @@ function LandingContent() {
                   <span>Know what needs a second look.</span>
                 </h2>
                 <p>
-                  See ProtectSUS with us. Walk through API maintenance, security
-                  findings, and the decisions that stay yours.
+                  Get ProtectSUS for Mac or Windows, or book a meeting and walk
+                  through it with us.
                 </p>
               </div>
-              <BookingLink />
+              <div className="ps-actions">
+                <DownloadLink />
+                <MeetingLink />
+              </div>
             </div>
           </ScenicSurface>
         </section>
@@ -330,6 +362,7 @@ function LandingContent() {
         <div className="ps-footer-links">
           <a href="#product">Product</a>
           <a href="#questions">FAQ</a>
+          <a href="#contact">Contact</a>
           <a href={WORKSPACE_URL}>
             Workspace
             <ArrowUpRight size={13} aria-hidden="true" />

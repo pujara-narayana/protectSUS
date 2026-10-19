@@ -1,0 +1,17 @@
+.ps-download { display: flex; flex-direction: column; align-items: center; padding: 28px 16px 64px; }
+.ps-download-back { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; margin: 0 0 8vh max(0px, calc((100vw - 1120px) / 2)); color: var(--ps-muted); font-size: 14px; text-decoration: none; }
+.ps-download-back:hover { color: var(--ps-text); }
+.ps-download-card { width: min(100%, 620px); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 20px; }
+.ps-download-card h1 { font-size: clamp(32px, 5vw, 48px); line-height: 1.1; letter-spacing: -0.03em; font-weight: 600; text-wrap: balance; font-variant-numeric: tabular-nums; }
+.ps-download-lede { color: var(--ps-muted); font-size: 17px; max-width: 46ch; }
+.ps-download-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: 4px; }
+.ps-download-actions .ps-button { cursor: pointer; font-family: inherit; color: var(--ps-text); }
+.ps-download-actions .ps-button-primary { color: var(--ps-button-ink); }
+.ps-download-others { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 10px 18px; margin-top: 12px; font-size: 14px; color: var(--ps-faint); }
+.ps-download-others a { display: inline-flex; align-items: center; gap: 6px; color: var(--ps-text); text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--ps-line); }
+.ps-download-others a:hover { text-decoration-color: var(--ps-blue); }
+.ps-download-help { margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--ps-line); display: flex; flex-direction: column; gap: 10px; text-align: left; font-size: 14px; color: var(--ps-muted); }
+.ps-download-help strong { color: var(--ps-text); font-weight: 500; }
+.ps-download-help a { color: var(--ps-blue); }
+.ps-download :is(a, button):focus-visible { outline: 2px solid var(--ps-focus); outline-offset: 3px; }
+@media (max-width: 520px) { .ps-download-actions { flex-direction: column; width: 100%; } .ps-download-actions .ps-button { width: 100%; } }

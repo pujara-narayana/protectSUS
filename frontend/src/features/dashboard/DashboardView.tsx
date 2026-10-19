@@ -457,7 +457,7 @@ export const Dashboard = ({
           <MetricCard
             title="Overall Risk"
             value={
-              metrics.overallRisk !== null ? `${metrics.overallRisk}/100` : "—"
+              metrics.overallRisk !== null ? `${metrics.overallRisk}/100` : "-"
             }
             status={
               metrics.overallRisk !== null && metrics.overallRisk > 60
@@ -475,7 +475,7 @@ export const Dashboard = ({
             value={
               metrics.criticalCount !== null
                 ? String(metrics.criticalCount)
-                : "—"
+                : "-"
             }
             status={
               metrics.criticalCount !== null && metrics.criticalCount > 0
@@ -488,7 +488,7 @@ export const Dashboard = ({
           />
           <MetricCard
             title="High Severity"
-            value={metrics.highCount !== null ? String(metrics.highCount) : "—"}
+            value={metrics.highCount !== null ? String(metrics.highCount) : "-"}
             status={
               metrics.highCount !== null && metrics.highCount > 0
                 ? "warning"
@@ -503,7 +503,7 @@ export const Dashboard = ({
             value={
               metrics.totalFindings !== null
                 ? String(metrics.totalFindings)
-                : "—"
+                : "-"
             }
             status="safe"
             icon={<CheckCircle className="w-5 h-5" />}

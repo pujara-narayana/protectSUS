@@ -873,3 +873,8 @@ body:has(.ps-landing) {
     animation: none !important;
   }
 }
+.ps-contact { display: flex; align-items: center; justify-content: space-between; gap: var(--ps-gap-lg); flex-wrap: wrap; margin-top: var(--ps-gap-3xl); padding: var(--ps-gap-xl) 0; border-top: 1px solid var(--ps-line); border-bottom: 1px solid var(--ps-line); scroll-margin-top: 96px; }
+.ps-contact h2 { font-size: clamp(28px, 4vw, 40px); line-height: 1.1; letter-spacing: -0.03em; font-weight: 600; }
+.ps-contact p { margin-top: var(--ps-gap-sm); color: var(--ps-muted); max-width: 52ch; }
+.ps-close .ps-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+@media (max-width: 640px) { .ps-contact .ps-button, .ps-close .ps-actions .ps-button { width: 100%; } }

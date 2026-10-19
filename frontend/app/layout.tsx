@@ -3,7 +3,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 
 export const metadata: Metadata = {
-  title: "ProtectSUS — API maintenance and security review",
+  title: "ProtectSUS: API maintenance and security review",
   description:
     "Understand your API integrations, follow upstream changes, and review security findings with evidence from your code.",
 };

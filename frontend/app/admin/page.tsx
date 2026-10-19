@@ -51,10 +51,10 @@ const AdminDashboard = () => {
 
   // Data state
   const [kpiMetrics, setKpiMetrics] = useState<KPIMetric[]>([
-    { title: 'Total Users', value: '—', icon: 'users' },
-    { title: 'Analyses (24h)', value: '—', icon: 'activity' },
-    { title: 'Vulnerabilities Found', value: '—', icon: 'shield-alert' },
-    { title: 'Monthly Token Spend', value: '—', icon: 'dollar-sign' },
+    { title: 'Total Users', value: '-', icon: 'users' },
+    { title: 'Analyses (24h)', value: '-', icon: 'activity' },
+    { title: 'Vulnerabilities Found', value: '-', icon: 'shield-alert' },
+    { title: 'Monthly Token Spend', value: '-', icon: 'dollar-sign' },
   ]);
   const [systemHealth, setSystemHealth] = useState<SystemHealthItem[]>([]);
   const [recentAnalyses, setRecentAnalyses] = useState<RecentAnalysis[]>([]);

@@ -342,7 +342,7 @@ function Inventory() {
                   <i className="ps-field-loading" />
                 )}
               </span>
-              <span role="cell">{resolved ? row.calls : "—"}</span>
+              <span role="cell">{resolved ? row.calls : "-"}</span>
               <span role="cell">
                 <span
                   className={
