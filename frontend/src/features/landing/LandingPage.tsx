@@ -6,6 +6,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   Check,
+  Download,
   GitBranch,
   Menu,
   ShieldCheck,
@@ -30,7 +31,6 @@ import "./simulations.css";
 
 const WORKSPACE_URL =
   "https://91rwr78g0c.execute-api.us-east-1.amazonaws.com/maintenance";
-const BOOKING_URL = "https://calendly.com/samarpanmohanty3347/30min";
 const questions = [
   {
     title: "What does ProtectSUS monitor?",
@@ -73,16 +73,14 @@ function Brand({ footer = false }: { footer?: boolean }) {
     </a>
   );
 }
-function BookingLink({ compact = false }: { compact?: boolean }) {
+function DownloadLink({ compact = false }: { compact?: boolean }) {
   return (
     <a
       className={`ps-button ps-button-primary${compact ? " ps-button-compact" : ""}`}
-      href={BOOKING_URL}
-      target="_blank"
-      rel="noopener noreferrer"
+      href="/download"
     >
-      Book a demo
-      <ArrowUpRight size={16} aria-hidden="true" />
+      Download
+      <Download size={16} aria-hidden="true" />
     </a>
   );
 }
@@ -128,7 +126,7 @@ function LandingContent() {
             ))}
           </nav>
           <div className="ps-nav-actions">
-            <BookingLink compact />
+            <DownloadLink compact />
             <button
               id="ps-menu-toggle"
               className="ps-menu-toggle"
@@ -174,7 +172,7 @@ function LandingContent() {
             workspace.
           </p>
           <div className="ps-actions">
-            <BookingLink />
+            <DownloadLink />
             <button
               className="ps-button ps-button-secondary"
               type="button"
@@ -316,11 +314,11 @@ function LandingContent() {
                   <span>Know what needs a second look.</span>
                 </h2>
                 <p>
-                  See ProtectSUS with us. Walk through API maintenance, security
-                  findings, and the decisions that stay yours.
+                  Get ProtectSUS for Mac or Windows. Connect a repository and
+                  see every API your code depends on in minutes.
                 </p>
               </div>
-              <BookingLink />
+              <DownloadLink />
             </div>
           </ScenicSurface>
         </section>
