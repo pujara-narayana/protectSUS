@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { ArrowLeft, Download, Globe, Laptop, Monitor } from "lucide-react";
 import "./landing.css";
 import "./download.css";
+import { recordVisit } from "./visit";
 
 const RELEASES = "https://github.com/Samarpan1122/protectsus-releases/releases";
 const LATEST_API = "https://api.github.com/repos/Samarpan1122/protectsus-releases/releases/latest";
@@ -71,6 +72,7 @@ export default function DownloadPage() {
   const [started, setStarted] = useState(false);
 
   useEffect(() => {
+    recordVisit("download");
     void Promise.all([latestInstallers(), detectTarget()]).then(([found, detected]) => { setInstallers(found); setTarget(detected); });
   }, []);
 

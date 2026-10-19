@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { recordVisit } from "./visit";
 import {
   Play,
   ArrowRight,
@@ -104,6 +105,7 @@ function LandingContent() {
   const { paused, reduced } = usePageMotion();
   const [menuOpen, setMenuOpen] = useState(false);
   const [playRequest, setPlayRequest] = useState(0);
+  useEffect(() => recordVisit("landing"), []);
   const links = [
     { href: "#product", title: "Product" },
     { href: "#security", title: "Security" },
