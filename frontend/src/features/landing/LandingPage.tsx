@@ -31,8 +31,6 @@ import "./demo.css";
 import "./continuity.css";
 import "./simulations.css";
 
-const WORKSPACE_URL =
-  "https://91rwr78g0c.execute-api.us-east-1.amazonaws.com/maintenance";
 const BOOKING_URL = "https://calendly.com/samarpanmohanty3347/30min";
 const questions = [
   {
@@ -62,7 +60,7 @@ const questions = [
   {
     title: "What access do I need to get started?",
     answer:
-      "Sign in with GitHub and install the ProtectSUS GitHub App on the repositories you want to connect. Repository access is checked before connecting. Initial indexing reads source without executing repository code.",
+      "Download ProtectSUS for macOS or Windows, then sign in with GitHub in the desktop app. Install the ProtectSUS GitHub App on the repositories you want to connect. Repository access is checked before connecting. Initial indexing reads source without executing repository code.",
   },
   {
     title: "Can I control automation and model spending?",
@@ -194,9 +192,7 @@ function LandingContent() {
           </p>
           <p className="ps-hero-note">Free forever. No card required.</p>
           <div className="ps-actions">
-            <a className="ps-button ps-button-primary" href={WORKSPACE_URL}>
-              Start free in browser <ArrowUpRight size={16} aria-hidden="true" />
-            </a>
+            <DownloadLink />
             <button
               className="ps-button ps-button-secondary"
               type="button"
@@ -219,8 +215,8 @@ function LandingContent() {
             </button>
           </div>
           <p className="ps-hero-note">
-            <GitBranch size={14} aria-hidden="true" /> GitHub sign-in required.
-            Choose the repository you connect.
+            <GitBranch size={14} aria-hidden="true" /> For macOS and Windows.
+            Sign in with GitHub in the desktop app.
           </p>
           <div className="ps-hero-figure">
             <ScenicSurface className="ps-hero-scenery">
@@ -261,8 +257,8 @@ function LandingContent() {
               the source, the affected code, and the checks before deciding what
               to ship.
             </p>
-            <a className="ps-text-link" href={WORKSPACE_URL}>
-              See the workspace
+            <a className="ps-text-link" href="/download">
+              Download the desktop app
               <ArrowUpRight size={16} aria-hidden="true" />
             </a>
           </div>
@@ -371,8 +367,8 @@ function LandingContent() {
           <a href="#product">Product</a>
           <a href="#questions">FAQ</a>
           <a href="#contact">Contact</a>
-          <a href={WORKSPACE_URL}>
-            Workspace
+          <a href="/download">
+            Download desktop app
             <ArrowUpRight size={13} aria-hidden="true" />
           </a>
         </div>

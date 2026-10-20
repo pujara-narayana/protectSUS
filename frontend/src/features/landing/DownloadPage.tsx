@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowLeft, Download, Globe, Laptop, Monitor } from "lucide-react";
+import { ArrowLeft, Download, Laptop, Monitor } from "lucide-react";
 import "./landing.css";
 import "./download.css";
 import { recordVisit } from "./visit";
 
 const RELEASES = "https://github.com/Samarpan1122/protectsus-releases/releases";
 const LATEST_API = "https://api.github.com/repos/Samarpan1122/protectsus-releases/releases/latest";
-const WEB_APP = "https://91rwr78g0c.execute-api.us-east-1.amazonaws.com";
 const COUNTDOWN_SECONDS = 5;
 
 type Target = "mac-arm" | "mac-intel" | "windows";
@@ -90,7 +89,7 @@ export default function DownloadPage() {
     : cancelled ? `ProtectSUS for ${LABELS[target]}`
     : `Your download starts in ${seconds}…`;
   const lede = target === undefined ? "Checking your computer so you get the right installer."
-    : target === null ? "On this device, use ProtectSUS in your browser, or download it for your computer below."
+    : target === null ? "ProtectSUS is a desktop app for macOS and Windows. Open this page on your computer or choose its installer below."
     : started ? `Version ${installers?.version}. If nothing happened, use the button below.`
     : `Version ${installers?.version} for ${LABELS[target]}.`;
 
@@ -107,9 +106,6 @@ export default function DownloadPage() {
         </a>
         {!started && !cancelled && <button className="ps-button ps-button-secondary" onClick={() => setCancelled(true)}>Cancel</button>}
       </div>}
-      {target === null && <div className="ps-download-actions">
-        <a className="ps-button ps-button-primary" href={WEB_APP}><Globe size={16} aria-hidden="true" />Open the web app</a>
-      </div>}
 
       {installers && <div className="ps-download-others">
         <span>{target ? "Need a different version?" : "Installers"}</span>
@@ -121,7 +117,7 @@ export default function DownloadPage() {
       <div className="ps-download-help">
         <p><strong>First launch on Mac:</strong> open the downloaded file, drag ProtectSUS to Applications, then open it. If macOS can’t verify it, go to System Settings → Privacy &amp; Security and choose Open Anyway.</p>
         <p><strong>First launch on Windows:</strong> run the installer. If Windows protects your PC, choose More info → Run anyway.</p>
-        <p>The desktop app keeps itself up to date. <a href={RELEASES}>All releases</a> · <a href={WEB_APP}>Use it in your browser</a></p>
+        <p>The desktop app keeps itself up to date. <a href={RELEASES}>All releases</a></p>
       </div>
     </section>
   </main>;
