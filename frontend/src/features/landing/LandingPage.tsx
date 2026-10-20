@@ -36,6 +36,10 @@ const WORKSPACE_URL =
 const BOOKING_URL = "https://calendly.com/samarpanmohanty3347/30min";
 const questions = [
   {
+    title: "Is ProtectSUS really free forever?",
+    answer: "Yes. ProtectSUS is free forever, with no subscription or payment card required. You can connect one active repository per account. Shared review capacity and usage limits apply. Feedback is optional; no promotion or public review is required.",
+  },
+  {
     title: "What does ProtectSUS monitor?",
     answer:
       "ProtectSUS indexes connected GitHub repositories, identifies supported API usage, and monitors linked documentation and API specifications. Pushes and pull requests can trigger new assessments. Dynamic usage and incomplete coverage are reported explicitly.",
@@ -188,8 +192,11 @@ function LandingContent() {
             API maintenance and security review in one workspace. Know what your
             code depends on, what changed upstream, and what needs your attention.
           </p>
+          <p className="ps-hero-note">Free forever. No card required.</p>
           <div className="ps-actions">
-            <DownloadLink />
+            <a className="ps-button ps-button-primary" href={WORKSPACE_URL}>
+              Start free in browser <ArrowUpRight size={16} aria-hidden="true" />
+            </a>
             <button
               className="ps-button ps-button-secondary"
               type="button"
@@ -212,8 +219,8 @@ function LandingContent() {
             </button>
           </div>
           <p className="ps-hero-note">
-            <GitBranch size={14} aria-hidden="true" /> For macOS and Windows.
-            Connect your GitHub repository in the app.
+            <GitBranch size={14} aria-hidden="true" /> GitHub sign-in required.
+            Choose the repository you connect.
           </p>
           <div className="ps-hero-figure">
             <ScenicSurface className="ps-hero-scenery">
