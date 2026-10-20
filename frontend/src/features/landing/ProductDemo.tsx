@@ -197,10 +197,6 @@ export default function ProductDemo({ playRequest }: { playRequest: number }) {
                   0{chapter + 1}
                   <span> / 04</span>
                 </span>
-                <span>
-                  API maintenance
-                  <br />& security review
-                </span>
               </div>
             </aside>
 

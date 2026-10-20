@@ -82,7 +82,7 @@ function DownloadLink({ compact = false }: { compact?: boolean }) {
       className={`ps-button ps-button-primary${compact ? " ps-button-compact" : ""}`}
       href="/download"
     >
-      Download
+      {compact ? "Desktop app" : "Download desktop app"}
       <Download size={16} aria-hidden="true" />
     </a>
   );
@@ -185,9 +185,8 @@ function LandingContent() {
             <span>Stay a step ahead.</span>
           </h1>
           <p className="ps-hero-copy">
-            Know what your code depends on, what changed upstream, and what
-            needs your attention. API maintenance and security review, in one
-            workspace.
+            API maintenance and security review in one workspace. Know what your
+            code depends on, what changed upstream, and what needs your attention.
           </p>
           <div className="ps-actions">
             <DownloadLink />
@@ -213,8 +212,8 @@ function LandingContent() {
             </button>
           </div>
           <p className="ps-hero-note">
-            <GitBranch size={14} aria-hidden="true" /> Connect your GitHub
-            repository. Keep control of every change.
+            <GitBranch size={14} aria-hidden="true" /> For macOS and Windows.
+            Connect your GitHub repository in the app.
           </p>
           <div className="ps-hero-figure">
             <ScenicSurface className="ps-hero-scenery">
