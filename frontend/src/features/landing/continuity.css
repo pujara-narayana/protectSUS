@@ -1221,3 +1221,100 @@ html:has(.ps-landing) {
   padding: 3px 7px;
   font-size: 8px;
 }
+
+/* Hero: product demo beside the headline on wide screens. */
+.ps-hero-free {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 22px !important;
+  padding: 7px 14px 7px 11px;
+  border: 1px solid var(--ps-line);
+  border-radius: 999px;
+  color: var(--ps-text);
+  font-size: 14px;
+  font-weight: 500;
+}
+.ps-hero-free svg {
+  color: var(--ps-blue);
+  flex-shrink: 0;
+}
+@media (min-width: 1180px) {
+  .ps-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr);
+    gap: 44px;
+    align-items: start;
+    max-width: 1320px;
+    padding-top: 100px;
+  }
+  .ps-hero-intro {
+    padding-top: 64px;
+  }
+  .ps-hero h1 {
+    font-size: clamp(40px, 3.3vw, 52px);
+  }
+  .ps-hero-figure {
+    margin-top: 0 !important;
+  }
+  .ps-hero-scenery {
+    padding: 26px 22px;
+  }
+  .ps-hero-scenery .ps-demo-stage {
+    display: flex;
+    flex-direction: column;
+    /* ponytail: fixed height so the hero doesn't jump between chapters; raise if a scene grows */
+    height: 530px;
+    min-height: 0;
+  }
+  .ps-hero-scenery .ps-demo-context {
+    padding: 16px 24px 0;
+    border: 0;
+  }
+  .ps-hero-scenery .ps-demo-context h2 {
+    font-size: 24px;
+    max-width: none;
+    margin-top: 10px;
+  }
+  .ps-hero-scenery .ps-demo-context > p {
+    max-width: none;
+    margin-top: 8px;
+  }
+  .ps-hero-scenery .ps-demo-context-bottom {
+    display: none;
+  }
+  .ps-hero-scenery .ps-demo-visual {
+    padding: 14px 24px 18px;
+  }
+  .ps-hero-scenery .ps-draft-scene .ps-draft-checks > div {
+    padding: 6px 0;
+  }
+}
+
+/* Phone: full-width hero actions, readable tour screenshots, tidy footer. */
+@media (max-width: 760px) {
+  .ps-hero .ps-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .ps-hero .ps-actions .ps-button {
+    justify-content: center;
+  }
+  .ps-tour-window {
+    height: 300px;
+  }
+  .ps-tour-screenshot {
+    /* ponytail: crop to the top-left of the desktop capture so it stays legible; swap in phone captures if this reads poorly */
+    width: 190%;
+    max-width: none;
+    height: 100%;
+  }
+  .ps-tour-frame figcaption {
+    display: none;
+  }
+  .ps-footer-links {
+    margin-left: 0;
+    flex-wrap: wrap;
+    gap: 14px 22px;
+  }
+}

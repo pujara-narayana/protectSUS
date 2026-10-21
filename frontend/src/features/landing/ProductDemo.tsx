@@ -2,18 +2,16 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import {
-  ArrowRight,
   Check,
   FileCode2,
   GitBranch,
-  GitPullRequest,
   Globe2,
   Pause,
   Play,
   RotateCcw,
-  ShieldCheck,
 } from "lucide-react";
 
+import { DetectScene, FixScene, PullRequestScene } from "./DemoScenes";
 import { usePageMotion } from "./PageMotion";
 
 const chapters = [
@@ -23,22 +21,22 @@ const chapters = [
     detail: "Follow an API back to the code that calls it.",
   },
   {
-    title: "Catch a change",
+    title: "Sort what changed",
     short: "Detect",
-    detail: "An upstream change becomes a specific code review.",
+    detail: "Breaking changes become action items. New features wait as suggestions.",
   },
   {
-    title: "Review security",
-    short: "Review",
-    detail: "See the finding, its location, and the safer pattern.",
+    title: "Check every pull request",
+    short: "PR check",
+    detail: "Each pull request gets a verdict for API and security problems.",
   },
   {
-    title: "Prepare a draft",
-    short: "Prepare",
-    detail: "Review the patch and its verification scope before merging.",
+    title: "Prepare the fix",
+    short: "Fix",
+    detail: "A draft pull request with the diff, the checks, and what still needs you.",
   },
 ];
-const CHAPTER_SECONDS = 7;
+const CHAPTER_SECONDS = 8;
 const DURATION = chapters.length * CHAPTER_SECONDS;
 
 const RECORDING_ID = "Obq2vTh7gec";
@@ -258,115 +256,9 @@ export default function ProductDemo({ playRequest }: { playRequest: number }) {
                 </div>
               )}
 
-              {chapter === 1 && (
-                <div className="ps-change-scene">
-                  <div className="ps-source-event">
-                    <Globe2 size={18} />
-                    <div>
-                      <strong>Catalog API specification changed</strong>
-                      <span>A removed endpoint affects catalog.ts</span>
-                    </div>
-                    <span className="ps-event-tag">Source diff</span>
-                  </div>
-                  <div className="ps-code-diff">
-                    <div className="ps-code-title">
-                      <FileCode2 size={16} /> src/api/catalog.ts{" "}
-                      <span>Proposed patch</span>
-                    </div>
-                    <code className="ps-code-context">
-                      export async function fetchCatalog() {"{"}
-                    </code>
-                    <code className="ps-code-removed">
-                      <span>−</span> return fetch(&quot;/v1/products&quot;);
-                    </code>
-                    <code className="ps-code-added" data-shown={phase > 1.6}>
-                      <span>+</span> return fetch(&quot;/v2/items&quot;);
-                    </code>
-                    <code className="ps-code-context">{"}"}</code>
-                  </div>
-                  <div className="ps-evidence-link" data-shown={phase > 3.3}>
-                    <span className="ps-evidence-line" />
-                    <Globe2 size={15} />
-                    <span>Linked to the source change</span>
-                    <ArrowRight size={15} />
-                  </div>
-                </div>
-              )}
-
-              {chapter === 2 && (
-                <div className="ps-security-scene">
-                  <div className="ps-security-label">
-                    <ShieldCheck size={18} />
-                    <span>Static security review</span>
-                    <span>Python</span>
-                  </div>
-                  <div className="ps-security-code">
-                    <span className="ps-code-title">
-                      <FileCode2 size={16} /> integrations/client.py:24
-                    </span>
-                    <code>
-                      requests.get(url,{" "}
-                      <mark data-shown={phase > 1}>verify=False</mark>)
-                    </code>
-                    <span className="ps-code-scan" aria-hidden="true" />
-                  </div>
-                  <div className="ps-finding" data-shown={phase > 2}>
-                    <span className="ps-finding-marker">
-                      <ShieldCheck size={19} />
-                    </span>
-                    <div>
-                      <strong>TLS verification is disabled</strong>
-                      <p>
-                        Review this call and restore certificate verification.
-                      </p>
-                      <span>Potential risk · requires review</span>
-                    </div>
-                  </div>
-                  <div className="ps-demo-result" data-shown={phase > 4.5}>
-                    <FileCode2 size={15} />
-                    <span>The finding stays attached to the code.</span>
-                  </div>
-                </div>
-              )}
-
-              {chapter === 3 && (
-                <div className="ps-draft-scene">
-                  <div className="ps-draft-title">
-                    <GitPullRequest size={26} />
-                    <div>
-                      <span>Draft pull request</span>
-                      <strong>Update Catalog API endpoint</strong>
-                    </div>
-                  </div>
-                  <div className="ps-draft-checks">
-                    {[
-                      "Source change linked",
-                      "Proposed diff ready",
-                      "Verification scope recorded",
-                    ].map((label, index) => (
-                      <div
-                        key={label}
-                        data-complete={phase > 0.8 + index * 1.1}
-                      >
-                        <span>
-                          <Check size={14} />
-                        </span>
-                        {label}
-                      </div>
-                    ))}
-                  </div>
-                  <div className="ps-review-gate" data-shown={phase > 4}>
-                    <span>
-                      <GitBranch size={17} /> Your review comes next.
-                    </span>
-                    <span>No automatic merge</span>
-                  </div>
-                  <p className="ps-demo-limits">
-                    Supported contract repairs only. Isolated checks do not
-                    establish live-provider correctness.
-                  </p>
-                </div>
-              )}
+              {chapter === 1 && <DetectScene phase={phase} />}
+              {chapter === 2 && <PullRequestScene phase={phase} />}
+              {chapter === 3 && <FixScene phase={phase} />}
             </div>
           </div>
 

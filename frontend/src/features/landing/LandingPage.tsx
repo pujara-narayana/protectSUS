@@ -34,8 +34,8 @@ import "./simulations.css";
 const BOOKING_URL = "https://calendly.com/samarpanmohanty3347/30min";
 const questions = [
   {
-    title: "Is ProtectSUS really free forever?",
-    answer: "Yes. ProtectSUS is free forever, with no subscription or payment card required. You can connect one active repository per account. Shared review capacity and usage limits apply. Feedback is optional; no promotion or public review is required.",
+    title: "Is ProtectSUS really free?",
+    answer: "Yes. ProtectSUS is free, with no subscription or payment card required. You can connect one active repository per account. Shared review capacity and usage limits apply. Feedback is optional; no promotion or public review is required.",
   },
   {
     title: "What does ProtectSUS monitor?",
@@ -78,10 +78,16 @@ function Brand({ footer = false }: { footer?: boolean }) {
     </a>
   );
 }
-function DownloadLink({ compact = false }: { compact?: boolean }) {
+function DownloadLink({
+  compact = false,
+  secondary = false,
+}: {
+  compact?: boolean;
+  secondary?: boolean;
+}) {
   return (
     <a
-      className={`ps-button ps-button-primary${compact ? " ps-button-compact" : ""}`}
+      className={`ps-button ${secondary ? "ps-button-secondary" : "ps-button-primary"}${compact ? " ps-button-compact" : ""}`}
       href="/download"
     >
       {compact ? "Desktop app" : "Download desktop app"}
@@ -181,43 +187,51 @@ function LandingContent() {
 
       <main id="main">
         <section className="ps-hero ps-container" aria-labelledby="ps-headline">
-          <h1 id="ps-headline">
-            Your APIs change.
-            <br />
-            <span>Stay a step ahead.</span>
-          </h1>
-          <p className="ps-hero-copy">
-            API maintenance and security review in one workspace. Know what your
-            code depends on, what changed upstream, and what needs your attention.
-          </p>
-          <p className="ps-hero-note">Free forever. No card required.</p>
-          <div className="ps-actions">
-            <DownloadLink />
-            <button
-              className="ps-button ps-button-secondary"
-              type="button"
-              onClick={() => {
-                setPlayRequest((request) => request + 1);
-                const demo = document.getElementById("how-it-works");
-                demo?.scrollIntoView({
-                  behavior: window.matchMedia(
-                    "(prefers-reduced-motion: reduce)",
-                  ).matches
-                    ? "auto"
-                    : "smooth",
-                  block: "center",
-                });
-                demo?.focus({ preventScroll: true });
-              }}
-            >
-              See how it works
-              <Play size={15} aria-hidden="true" />
-            </button>
+          <div className="ps-hero-intro">
+            <h1 id="ps-headline">
+              See which API changes hit your code
+              <span> before they break it.</span>
+            </h1>
+            <p className="ps-hero-copy">
+              API maintenance and security review in one workspace. Know what
+              your code depends on, what changed upstream, and what needs your
+              attention.
+            </p>
+            <p className="ps-hero-free">
+              <Check size={16} aria-hidden="true" /> Free. No card required.
+            </p>
+            <div className="ps-actions">
+              <button
+                className="ps-button ps-button-primary"
+                type="button"
+                onClick={() => {
+                  setPlayRequest((request) => request + 1);
+                  const demo = document.getElementById("how-it-works");
+                  const rect = demo?.getBoundingClientRect();
+                  // ponytail: only scroll when the demo isn't already on screen (side-by-side hero)
+                  if (rect && (rect.top < 0 || rect.bottom > window.innerHeight)) {
+                    demo?.scrollIntoView({
+                      behavior: window.matchMedia(
+                        "(prefers-reduced-motion: reduce)",
+                      ).matches
+                        ? "auto"
+                        : "smooth",
+                      block: "center",
+                    });
+                  }
+                  demo?.focus({ preventScroll: true });
+                }}
+              >
+                See how it works
+                <Play size={15} aria-hidden="true" />
+              </button>
+              <DownloadLink secondary />
+            </div>
+            <p className="ps-hero-note">
+              <GitBranch size={14} aria-hidden="true" /> For macOS and Windows.
+              Sign in with GitHub in the desktop app.
+            </p>
           </div>
-          <p className="ps-hero-note">
-            <GitBranch size={14} aria-hidden="true" /> For macOS and Windows.
-            Sign in with GitHub in the desktop app.
-          </p>
           <div className="ps-hero-figure">
             <ScenicSurface className="ps-hero-scenery">
               <ProductDemo playRequest={playRequest} />

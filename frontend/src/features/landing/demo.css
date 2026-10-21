@@ -1015,3 +1015,165 @@
     transform: none;
   }
 }
+
+/* Walkthrough: triage, pull request check, and fix scenes. */
+.ps-triage-list {
+  display: grid;
+  gap: 10px;
+}
+.ps-triage-item {
+  display: grid;
+  gap: 6px;
+  padding: 13px 15px;
+  border: 1px solid var(--ps-demo-line);
+  border-radius: 9px;
+  background: var(--ps-demo-ink);
+}
+.ps-triage-item.is-breaking {
+  border-color: var(--ps-removed-ground);
+}
+.ps-triage-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  justify-self: start;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+}
+.is-breaking .ps-triage-tag {
+  background: var(--ps-removed-ground);
+  color: var(--ps-removed);
+}
+.is-feature .ps-triage-tag {
+  background: var(--ps-demo-accent-ground);
+  color: var(--ps-blue);
+}
+.ps-triage-item strong {
+  font-size: 13px;
+  font-weight: 500;
+}
+.ps-triage-item code,
+.ps-triage-hits span {
+  font-family: var(--ps-code-font);
+}
+.ps-triage-item > span:not(.ps-triage-tag) {
+  font-size: 11px;
+  color: var(--ps-muted);
+}
+.ps-triage-hits {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.ps-triage-hits span {
+  padding: 2px 7px;
+  border: 1px solid var(--ps-demo-line);
+  border-radius: 5px;
+  font-size: 10px;
+  color: var(--ps-text);
+}
+.ps-triage-item em {
+  font-style: normal;
+  font-size: 10px;
+}
+.is-breaking em {
+  color: var(--ps-removed);
+}
+.is-feature em {
+  color: var(--ps-faint);
+}
+.ps-triage-scene .ps-source-event,
+.ps-pr-scene .ps-draft-title,
+.ps-draft-scene .ps-draft-title {
+  margin-bottom: 16px;
+}
+.ps-pr-scene .ps-draft-title strong,
+.ps-draft-scene .ps-draft-title strong {
+  font-size: 16px;
+}
+.ps-pr-rows {
+  border-top: 1px solid var(--ps-demo-line);
+}
+.ps-pr-row {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  gap: 11px;
+  align-items: start;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--ps-demo-line);
+}
+.ps-pr-row > svg {
+  margin-top: 1px;
+}
+.ps-pr-row strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+}
+.ps-pr-row div > span {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  color: var(--ps-muted);
+}
+.ps-pr-status {
+  font-size: 10px;
+}
+.ps-pr-row.is-problem > svg,
+.ps-pr-row.is-problem .ps-pr-status {
+  color: var(--ps-warning);
+}
+.ps-pr-row.is-pass > svg,
+.ps-pr-row.is-pass .ps-pr-status {
+  color: var(--ps-success);
+}
+.ps-verdict {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 18px;
+}
+.ps-verdict-pill {
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--ps-removed-ground);
+  color: var(--ps-removed);
+  font-size: 12px;
+  font-weight: 500;
+}
+.ps-verdict > span:last-child {
+  font-size: 10px;
+  color: var(--ps-muted);
+}
+.ps-fix-diff {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+}
+.ps-fix-diff .ps-code-title {
+  padding: 10px 14px;
+}
+.ps-fix-diff code {
+  padding: 3px 14px;
+  font-size: 11px;
+}
+.ps-draft-scene .ps-draft-checks {
+  padding-top: 2px;
+}
+.ps-draft-scene .ps-draft-checks > div {
+  padding: 8px 0;
+}
+.ps-draft-checks small {
+  margin-left: auto;
+  font-size: 10px;
+  color: var(--ps-faint);
+}
+.ps-draft-checks .is-pending > span {
+  border-style: dashed;
+  color: var(--ps-faint);
+}
+.ps-draft-scene .ps-review-gate {
+  padding-top: 14px;
+  margin-top: 6px;
+}
