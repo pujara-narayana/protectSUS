@@ -95,7 +95,7 @@ function DownloadLink({
     </a>
   );
 }
-const APP_URL = "https://protectsus.app/maintenance/home";
+const APP_URL = "https://protectsus.app/dashboard";
 function AppLink({ compact = false }: { compact?: boolean }) {
   return (
     <a
