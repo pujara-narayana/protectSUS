@@ -95,6 +95,18 @@ function DownloadLink({
     </a>
   );
 }
+const APP_URL = "https://protectsus.app/maintenance/home";
+function AppLink({ compact = false }: { compact?: boolean }) {
+  return (
+    <a
+      className={`ps-button ps-button-secondary${compact ? " ps-button-compact" : ""}`}
+      href={APP_URL}
+    >
+      {compact ? "Web app" : "Open web app"}
+      <ArrowUpRight size={16} aria-hidden="true" />
+    </a>
+  );
+}
 function MeetingLink() {
   return (
     <a
@@ -152,6 +164,7 @@ function LandingContent() {
             ))}
           </nav>
           <div className="ps-nav-actions">
+            <AppLink compact />
             <DownloadLink compact />
             <button
               id="ps-menu-toggle"
@@ -225,11 +238,14 @@ function LandingContent() {
                 See how it works
                 <Play size={15} aria-hidden="true" />
               </button>
-              <DownloadLink secondary />
+              <AppLink />
             </div>
             <p className="ps-hero-note">
-              <GitBranch size={14} aria-hidden="true" /> For macOS and Windows.
-              Sign in with GitHub in the desktop app.
+              <GitBranch size={14} aria-hidden="true" />
+              <span>
+                Sign in with GitHub in your browser, or{" "}
+                <a href="/download">download for macOS and Windows</a>.
+              </span>
             </p>
           </div>
           <div className="ps-hero-figure">
@@ -363,11 +379,12 @@ function LandingContent() {
                   <span>Know what needs a second look.</span>
                 </h2>
                 <p>
-                  Get ProtectSUS for Mac or Windows, or book a meeting and walk
-                  through it with us.
+                  Open ProtectSUS in your browser, get it for Mac or Windows, or
+                  book a meeting and walk through it with us.
                 </p>
               </div>
               <div className="ps-actions">
+                <AppLink />
                 <DownloadLink />
                 <MeetingLink />
               </div>

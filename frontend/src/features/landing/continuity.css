@@ -1318,3 +1318,15 @@ html:has(.ps-landing) {
     gap: 14px 22px;
   }
 }
+
+/* Phone nav: web app only; the hero note links to the desktop download. */
+@media (max-width: 760px) {
+  .ps-nav-actions .ps-button-primary.ps-button-compact {
+    display: none;
+  }
+}
+.ps-hero-note a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
