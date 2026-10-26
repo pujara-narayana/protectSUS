@@ -8,7 +8,15 @@ import {
 } from 'lucide-react';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-const ADMIN_PASSWORD = "nexsnkm1234";
+
+// --- SECURITY FIXES ---
+// 1. Removed hardcoded admin password from frontend code.
+// 2. Removed all client-side authentication logic and password forms.
+// 3. All admin authentication and session management must be handled server-side (e.g., via secure cookies/session tokens).
+// 4. All admin API endpoints must be protected server-side; frontend only accesses them with a valid session.
+// 5. All fetches now include credentials for secure session cookies.
+// 6. If the backend returns 401/403, redirect to login page or show unauthorized message.
+// ----------------------
 
 interface KPIMetric {
   title: string;
@@ -40,12 +48,6 @@ interface User {
 }
 
 const AdminDashboard = () => {
-  // Password protection state
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [password, setPassword] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-
   // Mobile menu state
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -65,30 +67,41 @@ const AdminDashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalError, setModalError] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      setIsAuthenticated(true);
-      setPasswordError('');
-      // Store in session
-      sessionStorage.setItem('admin_auth', 'true');
-    } else {
-      setPasswordError('Incorrect password');
-    }
-  };
+  // Auth state
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null); // null = loading, false = not authed, true = authed
 
-  // Check session storage on mount
+  // --- SECURITY FIX: Check authentication status on mount ---
   useEffect(() => {
-    const auth = sessionStorage.getItem('admin_auth');
-    if (auth === 'true') {
-      setIsAuthenticated(true);
-    }
+    // Attempt to verify session with backend
+    const checkAuth = async () => {
+      try {
+        const resp = await fetch(`${API_URL}/api/v1/admin/auth-check`, {
+          method: 'GET',
+          credentials: 'include', // send cookies for session
+        });
+        if (resp.ok) {
+          setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
+        }
+      } catch (err) {
+        setIsAuthenticated(false);
+      }
+    };
+    checkAuth();
   }, []);
 
+  // --- SECURITY FIX: All fetches include credentials for session cookies ---
   // Fetch admin stats
   const fetchStats = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/api/v1/admin/stats`);
+      const response = await fetch(`${API_URL}/api/v1/admin/stats`, {
+        credentials: 'include',
+      });
+      if (response.status === 401 || response.status === 403) {
+        setIsAuthenticated(false);
+        return;
+      }
       if (response.ok) {
         const data = await response.json();
         setKpiMetrics([
@@ -106,7 +119,13 @@ const AdminDashboard = () => {
   // Fetch system health
   const fetchSystemHealth = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/api/v1/admin/system-health`);
+      const response = await fetch(`${API_URL}/api/v1/admin/system-health`, {
+        credentials: 'include',
+      });
+      if (response.status === 401 || response.status === 403) {
+        setIsAuthenticated(false);
+        return;
+      }
       if (response.ok) {
         const data = await response.json();
         setSystemHealth(data.services);
@@ -119,7 +138,13 @@ const AdminDashboard = () => {
   // Fetch recent analyses
   const fetchAnalyses = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/api/v1/admin/analyses?limit=10`);
+      const response = await fetch(`${API_URL}/api/v1/admin/analyses?limit=10`, {
+        credentials: 'include',
+      });
+      if (response.status === 401 || response.status === 403) {
+        setIsAuthenticated(false);
+        return;
+      }
       if (response.ok) {
         const data = await response.json();
         setRecentAnalyses(data.analyses);
@@ -132,7 +157,13 @@ const AdminDashboard = () => {
   // Fetch users
   const fetchUsers = useCallback(async () => {
     try {
-      const response = await fetch(`${API_URL}/api/v1/admin/users?limit=10`);
+      const response = await fetch(`${API_URL}/api/v1/admin/users?limit=10`, {
+        credentials: 'include',
+      });
+      if (response.status === 401 || response.status === 403) {
+        setIsAuthenticated(false);
+        return;
+      }
       if (response.ok) {
         const data = await response.json();
         setUserList(data.users);
@@ -171,10 +202,17 @@ const AdminDashboard = () => {
     setModalError('');
   };
 
-  const handleLogout = () => {
-    sessionStorage.removeItem('admin_auth');
+  // --- SECURITY FIX: Logout by calling backend logout endpoint and clearing session ---
+  const handleLogout = async () => {
+    try {
+      await fetch(`${API_URL}/api/v1/admin/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+    } catch (e) {
+      // ignore errors
+    }
     setIsAuthenticated(false);
-    setPassword('');
   };
 
   // Format last active time
@@ -192,47 +230,34 @@ const AdminDashboard = () => {
     return date.toLocaleDateString();
   };
 
-  // Password protection screen
+  // --- SECURITY FIX: Show loading spinner while checking authentication ---
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
+        <Loader2 className="w-10 h-10 text-indigo-500 animate-spin" />
+      </div>
+    );
+  }
+
+  // --- SECURITY FIX: If not authenticated, redirect to backend login page or show unauthorized message ---
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center">
-        <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-8 w-full max-w-md">
+        <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-8 w-full max-w-md text-center">
           <div className="flex items-center justify-center mb-6">
             <Lock className="w-12 h-12 text-indigo-500" />
           </div>
-          <h1 className="text-2xl font-bold text-white text-center mb-2">Admin Dashboard</h1>
-          <p className="text-zinc-500 text-center text-sm mb-6">Enter admin password to continue</p>
-
-          <form onSubmit={handleLogin}>
-            <div className="relative mb-4">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter password"
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 pr-12"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300"
-              >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
-
-            {passwordError && (
-              <p className="text-red-400 text-sm mb-4">{passwordError}</p>
-            )}
-
-            <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white py-3 rounded-lg font-semibold transition-all"
+          <h1 className="text-2xl font-bold text-white mb-2">Admin Dashboard</h1>
+          <p className="text-zinc-500 text-center text-sm mb-6">
+            You are not authenticated.<br />
+            {/* SECURITY FIX: Link to backend login page (should be protected and secure) */}
+            <a
+              href="/admin/login"
+              className="text-indigo-400 hover:underline"
             >
-              Access Dashboard
-            </button>
-          </form>
-
+              Login as Admin
+            </a>
+          </p>
           <div className="mt-6 text-center">
             <a href="/" className="text-zinc-500 hover:text-zinc-300 text-sm transition-colors">
               ← Back to Home

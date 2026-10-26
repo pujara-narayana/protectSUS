@@ -9,6 +9,8 @@ from pathlib import Path
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 import logging
+import os
+import stat
 
 from app.core.config import settings
 
@@ -20,12 +22,26 @@ class GitHubService:
 
     def __init__(self):
         """Initialize GitHub client"""
-        # Read private key from file
-        with open(settings.GITHUB_APP_PRIVATE_KEY_PATH, 'r') as key_file:
-            self.private_key = key_file.read()
+        # --- SECURITY FIX: INSECURE_SECRET_MANAGEMENT ---
+        # Prefer loading the private key from an environment variable or a secrets manager.
+        # If falling back to a file, ensure strict permissions (0600) and never check into VCS.
+        private_key_env = os.environ.get("GITHUB_APP_PRIVATE_KEY")
+        if private_key_env:
+            self.private_key = private_key_env
+        else:
+            private_key_path = settings.GITHUB_APP_PRIVATE_KEY_PATH
+            # Check file permissions: must be 0600
+            st = os.stat(private_key_path)
+            if stat.S_IMODE(st.st_mode) != 0o600:
+                raise PermissionError(
+                    f"Private key file {private_key_path} must have permissions 0600"
+                )
+            with open(private_key_path, 'r') as key_file:
+                self.private_key = key_file.read()
+        # --- END SECURITY FIX ---
 
         self.app_id = settings.GITHUB_APP_ID
-        
+
         # Authenticate as GitHub App
         auth = Auth.AppAuth(self.app_id, self.private_key)
         self.github = Github(auth=auth)
@@ -59,6 +75,22 @@ class GitHubService:
 
         Returns path to cloned repository
         """
+        # --- SECURITY FIX: RESOURCE_LEAK ---
+        temp_dir = None  # Ensure temp_dir is always defined for cleanup
+        # --- END SECURITY FIX ---
+
+        # --- SECURITY FIX: INSUFFICIENT_INPUT_VALIDATION ---
+        # Only allow cloning from trusted sources: validate clone_url matches the expected repo_full_name
+        # Accept only HTTPS GitHub URLs for the expected repo
+        import re
+        expected_https_url = f"https://github.com/{repo_full_name}.git"
+        expected_ssh_url = f"git@github.com:{repo_full_name}.git"
+        allowed_urls = {expected_https_url, expected_ssh_url}
+        if clone_url not in allowed_urls:
+            logger.error(f"Refusing to clone from untrusted URL: {clone_url}")
+            raise ValueError("Invalid or untrusted clone_url provided.")
+        # --- END SECURITY FIX ---
+
         try:
             # Create temporary directory
             temp_dir = tempfile.mkdtemp(prefix="protectsus_")
@@ -75,8 +107,10 @@ class GitHubService:
 
         except Exception as e:
             logger.error(f"Error cloning repository: {e}")
-            if temp_dir and Path(temp_dir).exists():
+            # --- SECURITY FIX: RESOURCE_LEAK ---
+            if temp_dir is not None and Path(temp_dir).exists():
                 shutil.rmtree(temp_dir)
+            # --- END SECURITY FIX ---
             raise
 
     async def get_code_files(self, repo_path: str) -> List[Dict[str, Any]]:
@@ -93,7 +127,7 @@ class GitHubService:
         }
 
         try:
-            repo_path_obj = Path(repo_path)
+            repo_path_obj = Path(repo_path).resolve()
 
             for file_path in repo_path_obj.rglob('*'):
                 # Skip directories, hidden files, and non-code files
@@ -109,20 +143,44 @@ class GitHubService:
                 if any(skip_dir in file_path.parts for skip_dir in skip_dirs):
                     continue
 
+                # --- SECURITY FIX: PATH_TRAVERSAL ---
+                # Ensure file_path is within repo_path_obj after resolving symlinks
+                try:
+                    resolved_file_path = file_path.resolve(strict=True)
+                except Exception as e:
+                    logger.warning(f"Skipping file {file_path}: could not resolve path ({e})")
+                    continue
+
+                # Python 3.9+: is_relative_to, else fallback
+                try:
+                    if not resolved_file_path.is_relative_to(repo_path_obj):
+                        logger.warning(f"Skipping file {file_path}: path traversal detected")
+                        continue
+                except AttributeError:
+                    # For Python <3.9
+                    try:
+                        resolved_file_path.relative_to(repo_path_obj)
+                    except ValueError:
+                        logger.warning(f"Skipping file {file_path}: path traversal detected")
+                        continue
+                # --- END SECURITY FIX ---
+
                 try:
                     # Read file content
-                    content = file_path.read_text(encoding='utf-8')
-                    relative_path = file_path.relative_to(repo_path_obj)
+                    content = resolved_file_path.read_text(encoding='utf-8')
+                    relative_path = resolved_file_path.relative_to(repo_path_obj)
 
                     code_files.append({
                         'path': str(relative_path),
                         'content': content,
                         'size': len(content),
-                        'extension': file_path.suffix
+                        'extension': resolved_file_path.suffix
                     })
-                except (UnicodeDecodeError, PermissionError) as e:
+                # --- SECURITY FIX: UNHANDLED_EXCEPTION ---
+                except (UnicodeDecodeError, PermissionError, OSError, FileNotFoundError, Exception) as e:
                     logger.warning(f"Skipping file {file_path}: {e}")
                     continue
+                # --- END SECURITY FIX ---
 
             logger.info(f"Found {len(code_files)} code files")
             return code_files
@@ -160,7 +218,7 @@ class GitHubService:
             timestamp = datetime.utcnow().strftime('%Y%m%d%H%M%S')
             branch_name = f"protectsus-fixes-{base_commit[:7]}-{timestamp}"
             base_ref = repo.get_git_ref(f"heads/{repo.default_branch}")
-            
+
             # Try to create branch, if it exists, delete and recreate
             try:
                 repo.create_git_ref(f"refs/heads/{branch_name}", base_commit)
@@ -203,14 +261,14 @@ class GitHubService:
 
             # Create PR
             pr_title = "🔒 ProtectSUS: Automated Security Fixes"
-            
+
             # Build reference section
             reference_section = "### 📋 Analysis Source\n\n"
             reference_section += f"- **Commit**: [`{base_commit[:7]}`](https://github.com/{repo_full_name}/commit/{base_commit})\n"
             if source_pr_number:
                 reference_section += f"- **Original PR**: [#{source_pr_number}](https://github.com/{repo_full_name}/pull/{source_pr_number})\n"
             reference_section += f"- **Repository**: [{repo_full_name}](https://github.com/{repo_full_name})\n"
-            
+
             pr_body = f"""## 🔒 Security Analysis Report
 
 {reference_section}
@@ -490,8 +548,10 @@ class GitHubService:
             gh = self.get_installation_client(repo_full_name)
             repo = gh.get_repo(repo_full_name)
 
-            # Check if user is a collaborator
+            # --- SECURITY FIX: DEPRECATED_API_USAGE ---
+            # Use the correct PyGithub method for checking collaborator status
             is_collaborator = repo.has_in_collaborators(username)
+            # --- END SECURITY FIX ---
 
             logger.info(f"User {username} collaborator status for {repo_full_name}: {is_collaborator}")
 
