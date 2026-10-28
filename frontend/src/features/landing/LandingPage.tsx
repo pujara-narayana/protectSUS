@@ -11,7 +11,9 @@ import {
   Download,
   GitBranch,
   Menu,
+  RefreshCw,
   ShieldCheck,
+  Wand2,
   X,
 } from "lucide-react";
 import ProductDemo from "./ProductDemo";
@@ -41,6 +43,11 @@ const questions = [
     title: "What does ProtectSUS monitor?",
     answer:
       "ProtectSUS indexes connected GitHub repositories, identifies supported API usage, and monitors linked documentation and API specifications. Pushes and pull requests can trigger new assessments. Dynamic usage and incomplete coverage are reported explicitly.",
+  },
+  {
+    title: "Do I have to give ProtectSUS my API keys?",
+    answer:
+      "No. Integrate and the integration audit never ask for provider keys. Generated pull requests reference environment variable names only, and you add the values in your own host's secret manager.",
   },
   {
     title: "Does it change or merge my code automatically?",
@@ -128,6 +135,7 @@ function LandingContent() {
   useEffect(() => recordVisit("landing"), []);
   const links = [
     { href: "#product", title: "Product" },
+    { href: "#platform", title: "Platform" },
     { href: "#security", title: "Security" },
     { href: "#questions", title: "FAQ" },
     { href: "#contact", title: "Contact" },
@@ -263,6 +271,73 @@ function LandingContent() {
 
         <FeatureTour />
         <ProductSimulations />
+
+        <section
+          id="platform"
+          className="ps-control-section ps-container"
+          data-reveal="control"
+          aria-labelledby="ps-platform-heading"
+        >
+          <div className="ps-control-copy">
+            <Wand2
+              className="ps-section-symbol"
+              size={30}
+              strokeWidth={1.4}
+              aria-hidden="true"
+            />
+            <h2 id="ps-platform-heading">
+              Build. Protect.
+              <br />
+              <span>Maintain.</span>
+            </h2>
+            <p>
+              ProtectSUS builds your API integrations, verifies them, and keeps
+              them working as APIs evolve.
+            </p>
+            <a className="ps-text-link" href={APP_URL}>
+              Open the workspace
+              <ArrowUpRight size={16} aria-hidden="true" />
+            </a>
+          </div>
+          <div className="ps-control-points" data-reveal="evidence">
+            <article>
+              <Wand2 size={19} aria-hidden="true" />
+              <div>
+                <h3>Build: describe it, review a draft PR</h3>
+                <p>
+                  Just say what you need, like &ldquo;send an SMS with Twilio
+                  when an order ships.&rdquo; A team of agents finds the official
+                  docs and OpenAPI definition, builds the integration with
+                  timeouts, rate-limit handling, safe retries and cost limits,
+                  verifies every endpoint, and opens a draft pull request.
+                </p>
+              </div>
+            </article>
+            <article>
+              <ShieldCheck size={19} aria-hidden="true" />
+              <div>
+                <h3>Protect: audit every integration</h3>
+                <p>
+                  Check exposed credentials, unverified webhooks, missing 429
+                  handling, unsafe retries, missing timeouts, and idempotency.
+                  Severity and confidence are scored separately. Export SARIF
+                  for GitHub code scanning.
+                </p>
+              </div>
+            </article>
+            <article>
+              <RefreshCw size={19} aria-hidden="true" />
+              <div>
+                <h3>Maintain: stay ahead of API changes</h3>
+                <p>
+                  Monitor provider documentation and changelogs, map changes to
+                  your call sites, and get repair pull requests with isolated
+                  checks before integrations break.
+                </p>
+              </div>
+            </article>
+          </div>
+        </section>
 
         <section
           id="security"
